@@ -1,0 +1,2 @@
+`define DATA_WORD_SIZE 32
+`define DATA_ADDR_SIZE 12

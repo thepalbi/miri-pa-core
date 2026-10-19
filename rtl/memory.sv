@@ -7,19 +7,24 @@ module memory_bank #(
     parameter addr_size=`DATA_ADDR_SIZE
 ) (
     input clk,
+
+    // Write interface
     input w_en,
-    input [addr_size-1:0] addr,
+    input [addr_size-1:0] w_addr,
     input [word_size-1:0] d_in,
-    output reg [word_size-1:0] d_out,
+
+    // Read interface
+    input [addr_size-1:0] r_addr,
+    output logic [word_size-1:0] d_out
 );
-    // main memory bank
     reg [word_size-1:0] bank [0:(2 ** addr_size)-1];
 
-    always @ (*)
-        d_out <= bank[addr];
-
-    always @ (posedge clk) begin
+    always_ff @ (posedge clk) begin
         if (w_en)
-            bank[addr] <= d_in;
+            bank[w_addr] <= d_in;
+    end
+
+    always_ff @ (posedge clk) begin
+        d_out <= bank[r_addr];
     end
 endmodule

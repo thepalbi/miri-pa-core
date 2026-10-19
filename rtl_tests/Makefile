@@ -6,10 +6,7 @@ VERILOG_SOURCES := $(RTL_DIR)/memory.sv
 VERILOG_INCLUDE_DIRS := $(RTL_DIR)
 
 TOPLEVEL = memory_bank
-MODULE = test_memory_bank
-
-# Verilator -Werror-style defaults on COMBDLY/NULLPORT in memory.sv
-COMPILE_ARGS += -Wno-COMBDLY -Wno-NULLPORT
+COCOTB_TEST_MODULES = test_memory_bank
 
 export PYTHONPATH := $(abspath .):$(PYTHONPATH)
 

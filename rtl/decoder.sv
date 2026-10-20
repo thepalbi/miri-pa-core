@@ -38,6 +38,7 @@ module decoder (
             OP_IMM: offset = {offset_sign, ir[31:20]};
             BRANCH: offset = {offset_sign, ir[7], ir[30:25], ir[11:8], 1'b0};
             STORE:  offset = {offset_sign, ir[31:25], ir[11:7]};
+            default: offset = 13'b0;
         endcase
     end
 

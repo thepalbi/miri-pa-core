@@ -14,12 +14,8 @@ test_words = [
     0xFF,
 ]
 
-RTL_DIR = "../rtl"
-VERILOG_SOURCES = [f"{RTL_DIR}/memory.sv"]
-VERILOG_INCLUDE_DIRS = [RTL_DIR]
-TOPLEVEL = "memory_bank"
-MODULE = "test_memory_bank"
-
+VERILOG_SOURCES = "memory.sv"
+TOPMODEL = "memory_bank"
 
 @cocotb.test()
 async def test_read_then_write(dut):

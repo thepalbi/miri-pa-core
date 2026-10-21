@@ -9,7 +9,7 @@ module register_file #(
     input clk,
     input rst,
 
-    input has_read,
+    input w_en,
     input [addr_size-1:0] rd,
     input [word_size-1:0] d,
 
@@ -29,7 +29,7 @@ module register_file #(
         if (rst) begin
             for (i = 0; i < (2 ** addr_size); i = i + 1)
                 regs[i] <= 0;
-        end else if (has_read && rd != 0) begin
+        end else if (w_en && rd != 0) begin
             regs[rd] <= d;
         end
     end

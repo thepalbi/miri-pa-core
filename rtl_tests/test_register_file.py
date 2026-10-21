@@ -34,7 +34,7 @@ async def test_write_then_read(dut):
     await Timer(20, unit="ns")
     await reset_dut(dut)
 
-    dut.has_read.value = 1
+    dut.w_en.value = 1
     for i, value in enumerate(test_values, start=1):
         await FallingEdge(dut.clk)
         dut.rd.value = i
@@ -42,7 +42,7 @@ async def test_write_then_read(dut):
 
     await FallingEdge(dut.clk)
 
-    dut.has_read.value = 0
+    dut.w_en.value = 0
     for i, value in enumerate(test_values, start=1):
         dut.ra.value = i
         dut.rb.value = i
@@ -63,12 +63,12 @@ async def test_write_read_interleaved(dut):
     await FallingEdge(dut.clk)
 
     for i, value in enumerate(test_values, start=1):
-        dut.has_read.value = 1
+        dut.w_en.value = 1
         dut.rd.value = i
         dut.d.value = value
         await FallingEdge(dut.clk)
 
-        dut.has_read.value = 0
+        dut.w_en.value = 0
         dut.ra.value = i
         await RisingEdge(dut.clk)
         await Timer(2, unit="ns")
@@ -84,14 +84,14 @@ async def test_zero_register_ignores_writes(dut):
     await Timer(20, unit="ns")
     await reset_dut(dut)
 
-    dut.has_read.value = 1
+    dut.w_en.value = 1
     await FallingEdge(dut.clk)
     dut.rd.value = 0
     dut.d.value = 0xFF
 
     await FallingEdge(dut.clk)
 
-    dut.has_read.value = 0
+    dut.w_en.value = 0
     dut.ra.value = 0
     await RisingEdge(dut.clk)
     await Timer(2, unit="ns")

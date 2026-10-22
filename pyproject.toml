@@ -5,8 +5,11 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "riscv-assembler>=1.2.1",
+    "riscv-assembler",
 ]
+
+[tool.uv.sources]
+riscv-assembler = { path = "vendor/riscv-assembler" }
 
 [dependency-groups]
 dev = [

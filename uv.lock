@@ -155,7 +155,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "riscv-assembler", specifier = ">=1.2.1" }]
+requires-dist = [{ name = "riscv-assembler", directory = "vendor/riscv-assembler" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -287,15 +287,14 @@ wheels = [
 
 [[package]]
 name = "riscv-assembler"
-version = "1.2.1"
-source = { registry = "https://pypi.org/simple" }
+version = "1.2.2.dev3+gbd2e6e636"
+source = { directory = "vendor/riscv-assembler" }
 dependencies = [
     { name = "bitstring" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b9/5a/8979cb696feb2090acefc1a824ddac59a6dea1b4839ec3db2ddd1dc61411/riscv-assembler-1.2.1.tar.gz", hash = "sha256:b90def321f5fc42424d7f102bc016a75df288afd2d53fe63294d0ee836f65207", size = 312350, upload-time = "2023-04-24T20:48:09.874Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b2/0d/e1266df95f3dd656adba974e66cc49cbcc7877ed885cf6100f15a6ad7a27/riscv_assembler-1.2.1-py3-none-any.whl", hash = "sha256:59ce05e4cfaf34e42c88273937ee9375fcf77aa290bdcace5f44137d488f8c6a", size = 9934, upload-time = "2023-04-24T20:48:07.971Z" },
-]
+
+[package.metadata]
+requires-dist = [{ name = "bitstring" }]
 
 [[package]]
 name = "stack-data"

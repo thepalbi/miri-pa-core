@@ -1,3 +1,17 @@
+## Setup
+
+After cloning the repository, initialize and fetch git submodules (required for the `riscv-assembler` dependency in `vendor/riscv-assembler`):
+
+```bash
+git submodule update --init --recursive
+```
+
+Alternatively, clone with submodules in one step:
+
+```bash
+git clone --recurse-submodules <repository-url>
+```
+
 ## Testing
 
 ```

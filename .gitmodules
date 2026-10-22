@@ -1,0 +1,3 @@
+[submodule "vendor/riscv-assembler"]
+	path = vendor/riscv-assembler
+	url = https://github.com/thepalbi/riscv-assembler

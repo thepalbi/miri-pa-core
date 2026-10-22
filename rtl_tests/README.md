@@ -59,9 +59,6 @@ uv run make MODULE=test_memory_bank WAVES=1 COCOTB_TEST_FILTER=test_sync_read_wr
 | `COCOTB_TEST_FILTER=<pattern>` | Regex to select which tests to run (any match runs) | all tests |
 | `SIM=verilator` | Simulation backend (cocotb supports ghdl, icarus, verilator) | verilator |
 
-## Notes on macOS
-
-On macOS, the lz4 include and library paths are set via Homebrew (`brew --prefix lz4`) automatically when `WAVES=1` is used. On Linux these flags are omitted — ensure your system's lz4 headers are in the standard search path if you encounter issues.
 
 ## Adding a test module
 

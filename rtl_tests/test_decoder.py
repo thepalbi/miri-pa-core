@@ -3,10 +3,8 @@ from cocotb.triggers import Timer
 from riscv_assembler.convert import AssemblyConverter
 from dataclasses import dataclass
 
-RTL_DIR = "../rtl"
-VERILOG_SOURCES = [f"{RTL_DIR}/decoder.sv"]
-VERILOG_INCLUDE_DIRS = [RTL_DIR]
-TOPLEVEL = "decoder"
+VERILOG_SOURCES = f"decoder.sv"
+TOPMODEL = "decoder"
 
 assembler = AssemblyConverter(output_mode="a", nibble_mode=False)
 
@@ -47,6 +45,14 @@ CASES = [
         rs1=2,
         rs2=1,
         offset_or_imm=10,
+    ),
+    TestCase(
+        instr="sw x20, -20(x31)",
+        isStore=True,
+        hasRd=False,
+        rs1=31,
+        rs2=20,
+        offset_or_imm=-20,
     ),
 ]
 

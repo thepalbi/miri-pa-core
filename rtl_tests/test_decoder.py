@@ -17,7 +17,8 @@ class TestCase:
     rd: int | None = None
     rs1: int | None = None
     rs2: int | None = None
-    offset_or_imm: int | None = None
+    imm: int | None = None
+    offset: int | None = None
     # Optional literal 32-bit IR. When set, it is driven onto the DUT directly,
     # bypassing the assembler. Used for control-flow instructions (beq, jal),
     # whose offsets the assembler only accepts via code labels.
@@ -36,7 +37,7 @@ CASES = [
         hasRd=False,
         rs1=2,
         rs2=1,
-        offset_or_imm=10,
+        imm=10,
     ),
     TestCase(
         instr="sw x20, -20(x31)",
@@ -44,15 +45,15 @@ CASES = [
         hasRd=False,
         rs1=31,
         rs2=20,
-        offset_or_imm=-20,
+        imm=-20,
     ),
-    # ---- I-type immediate ALU ------------------------------------------
+    # ---- I-type imm ALU ------------------------------------------
     TestCase(
         instr="addi x5, x6, 25",
         hasRd=True,
         rd=5,
         rs1=6,
-        offset_or_imm=25,
+        imm=25,
     ),
     TestCase(
         instr="lw x1, 10(x2)",
@@ -60,7 +61,7 @@ CASES = [
         hasRd=True,
         rd=1,
         rs1=2,
-        offset_or_imm=10,
+        imm=10,
     ),
     # ---- R-type ALU (base + M-extension) ------------------------------
     TestCase(
@@ -119,7 +120,7 @@ CASES = [
         hasRd=False,
         rs1=16,
         rs2=17,
-        offset_or_imm=8,
+        offset=8,
         raw_ir=0b00000001000110000000010001100011,
     ),
     # ---- J-type jump (RVI jal) -----------------------------------------
@@ -131,7 +132,7 @@ CASES = [
         instr="jal x1, +8",
         hasRd=True,
         rd=1,
-        offset_or_imm=8,
+        offset=8,
         raw_ir=0b00000000100000000000000011101111,
     ),
 ]
@@ -146,7 +147,7 @@ async def test_decoder_instructions(dut, case: TestCase):
     assert dut.hasRd.value == int(case.hasRd)
     assert dut.isLoad.value == int(case.isLoad)
     assert dut.isStore.value == int(case.isStore)
-    for attr in ['rd', 'rs1', 'rs2', 'offset_or_imm']:
+    for attr in ['rd', 'rs1', 'rs2', 'offset', 'imm']:
         case_value = getattr(case, attr)
         if case_value is not None:
             dut_value = getattr(dut, attr).value

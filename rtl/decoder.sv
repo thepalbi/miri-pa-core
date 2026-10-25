@@ -25,34 +25,29 @@ module decoder (
     assign rs2 = ir[24:20];
     assign rd = ir[11:7];
 
-    assign hasRd  = (opcode == OP_IMM) | (opcode == OP) | (opcode == LOAD ) | (opcode == JAL);
+    assign hasRd   = (opcode == OP_IMM) || (opcode == OP) || (opcode == LOAD ) || (opcode == JAL);
     assign isLoad  = opcode == LOAD;
     assign isStore = opcode == STORE;
 
     assign opcode = ir[6:0];
-    always_comb begin
-        // Defaults if no branch is matched, to avoid inferring latch
-        imm = 12'b0;
+    always_comb begin: offset_pick
         offset = 21'b0;
-        case (opcode)
-            // TODO: Can we merge this two branches in the case statement ? 
-            OP_IMM: imm = {ir[31:20]};
-            STORE:  imm = {ir[31:25], ir[11:7]};
-            LOAD:   imm = {ir[31:20]};
-
+        if (opcode == JAL)
             // For computing the JAL and BRANCH offset, as our machine limits offsets due
             // to the 12bit address space (4096 addresses), we keep just the 
             // lower part of the offset - sign extended.
-            JAL:    offset = {ir[31], ir[19:12], ir[20], ir[30:21], 1'b0};
+            offset = {ir[31], ir[19:12], ir[20], ir[30:21], 1'b0};
+        else if (opcode == BRANCH)
             // Branch needs sign extending of 8 bits
-            BRANCH: offset = { { 8{ir[31]} }, ir[31], ir[7], ir[30:25], ir[11:8], 1'b0};
+            offset = { { 8{ir[31]} }, ir[31], ir[7], ir[30:25], ir[11:8], 1'b0};
+    end
 
-            default: begin
-                // TODO: How to better handle this ?
-                imm = 12'b0;
-                offset = 21'b0;
-            end
-        endcase
+    always_comb begin: imm_pick
+        imm = 12'b0;
+        if (opcode  == OP_IMM || opcode == LOAD)
+            imm = {ir[31:20]};
+        else if (opcode == STORE)
+            imm = {ir[31:25], ir[11:7]};
     end
 
 endmodule

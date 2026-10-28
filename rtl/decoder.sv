@@ -1,11 +1,6 @@
 `timescale 1ns / 1ps
 
-localparam [6:0] OP_IMM = 7'b0010011;
-localparam [6:0] OP     = 7'b0110011;
-localparam [6:0] STORE  = 7'b0100011;
-localparam [6:0] LOAD   = 7'b0000011;
-localparam [6:0] BRANCH = 7'b1100011;
-localparam [6:0] JAL    = 7'b1101111;
+`include "constants.sv"
 
 module decoder (
     input logic [31:0] ir,
@@ -29,27 +24,27 @@ module decoder (
     assign rs2 = ir[24:20];
     assign rd = ir[11:7];
 
-    assign writes_rd    = (opcode == OP_IMM) || (opcode == OP) || (opcode == LOAD ) || (opcode == JAL);
-    assign is_load      = opcode == LOAD;
-    assign is_store     = opcode == STORE;
+    assign writes_rd    = (opcode == `OPCODE_OP_IMM) || (opcode == `OPCODE_OP) || (opcode == `OPCODE_LOAD ) || (opcode == `OPCODE_JAL);
+    assign is_load      = opcode == `OPCODE_LOAD;
+    assign is_store     = opcode == `OPCODE_STORE;
 
     always_comb begin: offset_pick
         offset = 21'b0;
-        if (opcode == JAL)
+        if (opcode == `OPCODE_JAL)
             // For computing the JAL and BRANCH offset, as our machine limits offsets due
             // to the 12bit address space (4096 addresses), we keep just the 
             // lower part of the offset - sign extended.
             offset = {ir[31], ir[19:12], ir[20], ir[30:21], 1'b0};
-        else if (opcode == BRANCH)
+        else if (opcode == `OPCODE_BRANCH)
             // Branch needs sign extending of 8 bits
             offset = { { 8{ir[31]} }, ir[31], ir[7], ir[30:25], ir[11:8], 1'b0};
     end
 
     always_comb begin: imm_pick
         imm = 12'b0;
-        if (opcode  == OP_IMM || opcode == LOAD)
+        if (opcode  == `OPCODE_OP_IMM || opcode == `OPCODE_LOAD)
             imm = ir[31:20];
-        else if (opcode == STORE)
+        else if (opcode == `OPCODE_STORE)
             imm = {ir[31:25], ir[11:7]};
     end
 

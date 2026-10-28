@@ -46,6 +46,7 @@ uv run make MODULE=test_memory_bank WAVES=1 COCOTB_TEST_FILTER=test_sync_read_wr
 | `Makefile` | Build and test orchestration (includes cocotb's Makefile.sim); runs all modules when `MODULE` is not set |
 | `run_tests.sh` | Runs every `test_*.py` module, one `make MODULE=...` each |
 | `discover_tests.py` | Reads `VERILOG_SOURCES` and `TOPMODEL` from a test module, for the Makefile |
+| `test_alu.py` | Python test module with cocotb test cases for `alu` |
 | `test_memory_bank.py` | Python test module with cocotb test cases for `memory_bank` |
 | `test_register_file.py` | Python test module with cocotb test cases for `register_file` |
 | `sim_build/` | Generated simulation artifacts, one directory per module (`<module>_waves` when built with `WAVES=1`) |

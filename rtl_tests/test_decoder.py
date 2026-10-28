@@ -11,6 +11,9 @@ assembler = AssemblyConverter(output_mode="a", nibble_mode=False)
 @dataclass
 class TestCase:
     instr: str
+    opcode: int
+    funct3: int
+    funct7: int
     is_store: bool = False
     is_load: bool = False
     writes_rd: bool = False
@@ -33,6 +36,9 @@ CASES = [
     # ---- S-type  -------------------------------------------------------
     TestCase(
         instr="sw x1, 10(x2)",
+        opcode=0b0100011,
+        funct3=0b010,
+        funct7=0b0000000,
         is_store=True,
         writes_rd=False,
         rs1=2,
@@ -41,6 +47,9 @@ CASES = [
     ),
     TestCase(
         instr="sw x20, -20(x31)",
+        opcode=0b0100011,
+        funct3=0b010,
+        funct7=0b1111111,
         is_store=True,
         writes_rd=False,
         rs1=31,
@@ -50,6 +59,9 @@ CASES = [
     # ---- I-type imm ALU ------------------------------------------
     TestCase(
         instr="addi x5, x6, 25",
+        opcode=0b0010011,
+        funct3=0b000,
+        funct7=0b0000000,
         writes_rd=True,
         rd=5,
         rs1=6,
@@ -57,6 +69,9 @@ CASES = [
     ),
     TestCase(
         instr="lw x1, 10(x2)",
+        opcode=0b0000011,
+        funct3=0b010,
+        funct7=0b0000000,
         is_load=True,
         writes_rd=True,
         rd=1,
@@ -66,6 +81,9 @@ CASES = [
     # ---- R-type ALU (base + M-extension) ------------------------------
     TestCase(
         instr="add x1, x2, x3",
+        opcode=0b0110011,
+        funct3=0b000,
+        funct7=0b0000000,
         writes_rd=True,
         rd=1,
         rs1=2,
@@ -73,6 +91,9 @@ CASES = [
     ),
     TestCase(
         instr="sub x7, x8, x9",
+        opcode=0b0110011,
+        funct3=0b000,
+        funct7=0b0100000,
         writes_rd=True,
         rd=7,
         rs1=8,
@@ -80,6 +101,9 @@ CASES = [
     ),
     TestCase(
         instr="mul x10, x11, x12",
+        opcode=0b0110011,
+        funct3=0b000,
+        funct7=0b0000001,
         writes_rd=True,
         rd=10,
         rs1=11,
@@ -87,6 +111,9 @@ CASES = [
     ),
     TestCase(
         instr="div x10, x11, x12",
+        opcode=0b0110011,
+        funct3=0b100,
+        funct7=0b0000001,
         writes_rd=True,
         rd=10,
         rs1=11,
@@ -94,6 +121,9 @@ CASES = [
     ),
     TestCase(
         instr="and x13, x14, x15",
+        opcode=0b0110011,
+        funct3=0b111,
+        funct7=0b0000000,
         writes_rd=True,
         rd=13,
         rs1=14,
@@ -101,6 +131,9 @@ CASES = [
     ),
     TestCase(
         instr="or x13, x14, x15",
+        opcode=0b0110011,
+        funct3=0b110,
+        funct7=0b0000000,
         writes_rd=True,
         rd=13,
         rs1=14,
@@ -108,6 +141,9 @@ CASES = [
     ),
     TestCase(
         instr="xor x13, x14, x15",
+        opcode=0b0110011,
+        funct3=0b100,
+        funct7=0b0000000,
         writes_rd=True,
         rd=13,
         rs1=14,
@@ -117,6 +153,9 @@ CASES = [
     # beq x16, x17, +8  ->  0x01180463
     TestCase(
         instr="beq x16, x17, +8",
+        opcode=0b1100011,
+        funct3=0b000,
+        funct7=0b0000000,
         writes_rd=False,
         rs1=16,
         rs2=17,
@@ -125,11 +164,12 @@ CASES = [
     ),
     # ---- J-type jump (RVI jal) -----------------------------------------
     # jal x1, +8  ->  0x008000EF
-    # jal stores the link (PC+4) in rd, so writes_rd is True. The decoder does not
-    # yet implement the JAL opcode, so this test is expected to fail on
-    # writes_rd / offset_or_imm until JAL decoding is added.
+    # jal stores the link (PC+4) in rd, so writes_rd is True.
     TestCase(
         instr="jal x1, +8",
+        opcode=0b1101111,
+        funct3=0b000,
+        funct7=0b0000000,
         writes_rd=True,
         rd=1,
         offset=8,
@@ -147,6 +187,9 @@ async def test_decoder_instructions(dut, case: TestCase):
     assert dut.writes_rd.value == int(case.writes_rd)
     assert dut.is_load.value == int(case.is_load)
     assert dut.is_store.value == int(case.is_store)
+    assert dut.opcode.value == case.opcode
+    assert dut.funct3.value == case.funct3
+    assert dut.funct7.value == case.funct7
     for attr in ['rd', 'rs1', 'rs2', 'offset', 'imm']:
         case_value = getattr(case, attr)
         if case_value is not None:

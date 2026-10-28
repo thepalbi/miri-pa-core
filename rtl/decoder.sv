@@ -8,28 +8,31 @@ localparam [6:0] BRANCH = 7'b1100011;
 localparam [6:0] JAL    = 7'b1101111;
 
 module decoder (
-    input [31:0] ir,
+    input logic [31:0] ir,
 
-    output [4:0] rs1,
-    output [4:0] rs2,
-    output [4:0] rd,
-    output hasRd,
-    output isStore,
-    output isLoad,
+    output logic [4:0] rs1,
+    output logic [4:0] rs2,
+    output logic [4:0] rd,
+    output logic writes_rd,
+    output logic is_store,
+    output logic is_load,
     output logic [11:0] imm,
-    output logic [20:0] offset
+    output logic [20:0] offset,
+    output logic [6:0] opcode,
+    output logic [2:0] funct3,
+    output logic [6:0] funct7
 );
-    logic [6:0] opcode;
-
+    assign opcode = ir[6:0];
+    assign funct3 = ir[14:12];
+    assign funct7 = ir[31:25];
     assign rs1 = ir[19:15];
     assign rs2 = ir[24:20];
     assign rd = ir[11:7];
 
-    assign hasRd   = (opcode == OP_IMM) || (opcode == OP) || (opcode == LOAD ) || (opcode == JAL);
-    assign isLoad  = opcode == LOAD;
-    assign isStore = opcode == STORE;
+    assign writes_rd    = (opcode == OP_IMM) || (opcode == OP) || (opcode == LOAD ) || (opcode == JAL);
+    assign is_load      = opcode == LOAD;
+    assign is_store     = opcode == STORE;
 
-    assign opcode = ir[6:0];
     always_comb begin: offset_pick
         offset = 21'b0;
         if (opcode == JAL)
@@ -45,7 +48,7 @@ module decoder (
     always_comb begin: imm_pick
         imm = 12'b0;
         if (opcode  == OP_IMM || opcode == LOAD)
-            imm = {ir[31:20]};
+            imm = ir[31:20];
         else if (opcode == STORE)
             imm = {ir[31:25], ir[11:7]};
     end

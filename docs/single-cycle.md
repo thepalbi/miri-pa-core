@@ -2,17 +2,17 @@
 
 ### Instructions
 
-| Instruction | RISC-V | Implemented |
-|-------------|--------|-------------|
-| add | `add` | [ ] |
-| load immediate | `addi` | [ ] |
-| sub | `sub` | [ ] |
-| mul | `mul` | [ ] |
-| div | `div` | [ ] |
-| and | `and` | [ ] |
-| or | `or` | [ ] |
-| xor | `xor` | [ ] |
-| lw | `lw` | [ ] |
-| sw | `sw` | [ ] |
-| beq | `beq` | [ ] |
-| jump | `j` | [ ] |
+| Instruction | RISC-V | Implemented | Encoding Type | Notes |
+|-------------|--------|-------------|---------------| ---- |
+| add | `add` | [ ] | R | |
+| load immediate | `addi` | [ ] | I | |
+| sub | `sub` | [ ] | R | |
+| mul | `mul` | [ ] | R | |
+| div | `div` | [ ] | R | |
+| and | `and` | [ ] | R | |
+| or | `or` | [ ] | R|  |
+| xor | `xor` | [ ] | R|  |
+| lw | `lw` | [ ] | I | |
+| sw | `sw` | [ ] | S | |
+| beq | `beq` | [ ] | B | |
+| jump | `j` | [ ] | J | Do we implement either `jal` or `jalr` ? |

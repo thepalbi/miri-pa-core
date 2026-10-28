@@ -4,9 +4,15 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "riscv-assembler",
+]
+
+[tool.uv.sources]
+riscv-assembler = { path = "vendor/riscv-assembler" }
 
 [dependency-groups]
 dev = [
     "cocotb~=2.1",
+    "ipython>=9.17.1",
 ]

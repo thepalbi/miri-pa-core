@@ -16,37 +16,59 @@ module alu #(
     output logic taken
 );
 
-    always_comb begin: result_pick
-        result = '0;
-        case (opcode)
-            `OPCODE_OP:
-                case ({funct7, funct3})
-                    {`F7_BASE, `F3_ADD_SUB}: result = input1 + input2;
-                    {`F7_SUB, `F3_ADD_SUB}:  result = input1 - input2;
-                    {`F7_BASE, `F3_XOR}:     result = input1 ^ input2;
-                    {`F7_BASE, `F3_OR}:      result = input1 | input2;
-                    {`F7_BASE, `F3_AND}:     result = input1 & input2;
-                    {`F7_MULDIV, `F3_MUL}:   result = input1 * input2;
-                    {`F7_MULDIV, `F3_DIV}:
-                        // RISC-V defines x / 0 as all ones, and INT_MIN / -1 as INT_MIN
-                        // (Verilator returns 0 for both).
-                        if (input2 == 0)
-                            result = '1;
-                        else if (input1 == {1'b1, {(word_size-1){1'b0}}} && input2 == '1)
-                            result = input1;
-                        else
-                            result = $signed(input1) / $signed(input2);
-                    default: ;
-                endcase
-            `OPCODE_OP_IMM:
-                if (funct3 == `F3_ADD_SUB)
-                    result = input1 + input2;
-            // lw / sw address: base + offset
-            `OPCODE_LOAD, `OPCODE_STORE: result = input1 + input2;
-            default: ;
-        endcase
-    end
+    always_comb begin
+        result = 0;
+        taken = 0;
 
-    assign taken = (opcode == `OPCODE_BRANCH) && (funct3 == `F3_BEQ) && (input1 == input2);
+        if (opcode == `OPCODE_OP) begin
+            if (funct7 == `F7_BASE && funct3 == `F3_ADD_SUB) begin
+                result = input1 + input2;
+            end
+            else if (funct7 == `F7_SUB && funct3 == `F3_ADD_SUB) begin
+                result = input1 - input2;
+            end
+            else if (funct7 == `F7_BASE && funct3 == `F3_XOR) begin
+                result = input1 ^ input2;
+            end
+            else if (funct7 == `F7_BASE && funct3 == `F3_OR) begin
+                result = input1 | input2;
+            end
+            else if (funct7 == `F7_BASE && funct3 == `F3_AND) begin
+                result = input1 & input2;
+            end
+            else if (funct7 == `F7_MULDIV && funct3 == `F3_MUL) begin
+                result = input1 * input2;
+            end
+            else if (funct7 == `F7_MULDIV && funct3 == `F3_DIV) begin
+                // RISC-V: dividing by 0, becomes '1
+                if (input2 == 0) begin
+                    result = '1;
+                end
+                // RISC-V: -2^31 / -1, stays -2^31
+                else if (input1 == {1'b1, {(word_size-1){1'b0}}} && input2 == '1) begin
+                    result = input1;
+                end
+                else begin
+                    result = $signed(input1) / $signed(input2);
+                end
+            end
+        end
+        else if (opcode == `OPCODE_OP_IMM) begin
+            if (funct3 == `F3_ADD_SUB) begin
+                result = input1 + input2;
+            end
+        end
+        else if (opcode == `OPCODE_LOAD) begin
+            result = input1 + input2;
+        end
+        else if (opcode == `OPCODE_STORE) begin
+            result = input1 + input2;
+        end
+        else if (opcode == `OPCODE_BRANCH) begin
+            if (funct3 == `F3_BEQ && input1 == input2) begin
+                taken = 1;
+            end
+        end
+    end
 
 endmodule

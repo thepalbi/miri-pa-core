@@ -42,8 +42,19 @@ async def test_read_then_write(dut):
         assert dut.d_out.value == word, f"expected mem[{i}] to be {word}"
 
 
+import os
+from cocotb.triggers import Timer
+FAIL_HOLD_MS = float(os.environ.get("COCOTB_FAIL_HOLD_MS", "10"))
+async def check(condition, msg=""):
+  if not condition:
+      await Timer(FAIL_HOLD_MS, unit="ns")
+      raise AssertionError(msg)
+# usage
+# await check(dut.d_out.value == word, f"expected mem[{i}] to be {word}")
+
+
 @cocotb.test()
-async def test_read_write_interleaved(dut):
+async def test_read_write_in_same_clk_posedge(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
 
     dut._log.info("about to write all these words: %s", test_words)
@@ -56,14 +67,11 @@ async def test_read_write_interleaved(dut):
         dut.w_en.value = 1
         dut.w_addr.value = i
         dut.d_in.value = word
-        await FallingEdge(dut.clk)
 
-        dut.w_en.value = 0
         dut.r_addr.value = i
-
         await RisingEdge(dut.clk)
         await Timer(2, unit="ns")
-        assert dut.d_out.value == word, f"expected mem[{i}] to be {word}"
+        await check(dut.d_out.value == word, f"expected mem[{i}] to be {word}")
 
         await FallingEdge(dut.clk)
 

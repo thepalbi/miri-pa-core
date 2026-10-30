@@ -5,6 +5,7 @@
 module single_cycle_top (
     input logic clk,
     input logic rst,
+    input logic run,
     input logic imem_w_en,
     input logic [`DATA_ADDR_SIZE-1:0] imem_addr,
     input logic [`DATA_WORD_SIZE-1:0] imem_d
@@ -23,20 +24,20 @@ module single_cycle_top (
     logic [2:0] funct3;
     logic [6:0] funct7;
 
-    logic [word_size-1:0] rf_a;
-    logic [word_size-1:0] rf_b;
-    logic [word_size-1:0] rf_d;
+    logic [`DATA_WORD_SIZE-1:0] rf_a;
+    logic [`DATA_WORD_SIZE-1:0] rf_b;
+    logic [`DATA_WORD_SIZE-1:0] rf_d;
 
-    logic [DATA_WORD_SIZE-1:0] alu_out;
-    logic [DATA_WORD_SIZE-1:0] dmem_d_out;
-    logic [DATA_ADDR_SIZE-1:0] pc;
-    logic [DATA_WORD_SIZE-1:0] ir;
-    logic [DATA_ADDR_SIZE-1:0] offset_eff;
+    logic [`DATA_WORD_SIZE-1:0] alu_out;
+    logic [`DATA_WORD_SIZE-1:0] dmem_d_out;
+    logic [`DATA_ADDR_SIZE-1:0] pc;
+    logic [`DATA_WORD_SIZE-1:0] ir;
+    logic [`DATA_ADDR_SIZE-1:0] offset_eff;
     logic [`DATA_ADDR_SIZE-1:0] dmem_rw_addr;
 
     logic branch_taken;
 
-    assign offset_eff = offset[DATA_ADDR_SIZE-1:0];
+    assign offset_eff = offset[`DATA_ADDR_SIZE-1:0];
 
     assign rf_d = is_load ? dmem_d_out : alu_out;
     assign dmem_rw_addr = alu_out[`DATA_ADDR_SIZE-1:0];
@@ -44,8 +45,10 @@ module single_cycle_top (
     // PC block
     logic pc_w_en;
     logic [`DATA_ADDR_SIZE-1:0] branch_target;
-    assign branch_target = (pc + offset_eff)[DATA_ADDR_SIZE-1:0];
-    assign pc_w_en = branch_taken | (opcode == OPCODE_JAL);
+    logic signed [`DATA_ADDR_SIZE-1:0] word_offset;
+    assign word_offset = $signed(offset_eff) / 4;  // bytes -> words
+    assign branch_target = run ? pc + word_offset : '0;
+    assign pc_w_en = !run | branch_taken | (opcode == `OPCODE_JAL);
 
     // decoder consumes all top-instantiated wires since they have
     // identical name.
@@ -63,6 +66,7 @@ module single_cycle_top (
         .rst(rst),
         .w_en(imem_w_en),
         .w_addr(imem_addr),
+        .d_in(imem_d),
         .r_addr(pc),
         .d_out(ir)
     );
@@ -71,8 +75,9 @@ module single_cycle_top (
     memory_bank dmem(
         .clk(clk),
         .rst(rst),
-        .w_en(is_store),
+        .w_en(is_store && run),
         .w_addr(dmem_rw_addr),
+        .d_in(rf_b),
         .r_addr(dmem_rw_addr),
         .d_out(dmem_d_out)
     );
@@ -80,7 +85,7 @@ module single_cycle_top (
     logic [`DATA_WORD_SIZE-1:0] imm_sign_extended;
     logic [`DATA_WORD_SIZE-1:0] alu_input2;
     assign imm_sign_extended = {{ 20{imm[11]} }, imm};
-    assign alu_input2 = (is_load || is_store) ?
+    assign alu_input2 = (is_load || is_store || opcode == `OPCODE_OP_IMM) ?
         imm_sign_extended : rf_b;
 
     alu alu(
@@ -96,13 +101,13 @@ module single_cycle_top (
     register_file rf(
         .clk(clk),
         .rst(rst),
-        .w_en(writes_rd),
+        .w_en(writes_rd && run),
         .rd(rd),
         .d(rf_d),
         .ra(rs1),
         .rb(rs2),
         .a(rf_a),
-        .b(rf_b),
+        .b(rf_b)
     );
 
 endmodule

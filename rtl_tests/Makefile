@@ -12,7 +12,7 @@ SIM ?= verilator
 TOPLEVEL_LANG = verilog
 
 RTL_DIR := $(abspath ../rtl)
-VERILOG_SOURCES := $(RTL_DIR)/$(shell uv run python discover_tests.py $(MODULE) sources)
+VERILOG_SOURCES := $(addprefix $(RTL_DIR)/,$(shell uv run python discover_tests.py $(MODULE) sources))
 VERILOG_INCLUDE_DIRS := $(RTL_DIR)
 
 COCOTB_TOPLEVEL := $(shell uv run python discover_tests.py $(MODULE) toplevel)

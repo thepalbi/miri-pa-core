@@ -43,6 +43,8 @@ module single_cycle_top (
     assign dmem_rw_addr = alu_out[`DATA_ADDR_SIZE-1:0];
 
     // PC block
+    // TODO: Need to refactor this into a separate jump_target_builder
+    // TODO: Check that we are doing byte-addressable on the imem
     logic pc_w_en;
     logic [`DATA_ADDR_SIZE-1:0] branch_target;
     logic signed [`DATA_ADDR_SIZE-1:0] word_offset;

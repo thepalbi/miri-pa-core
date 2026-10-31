@@ -15,4 +15,4 @@
 | lw | `lw` | [ ] | I | |
 | sw | `sw` | [ ] | S | |
 | beq | `beq` | [ ] | B | |
-| jump | `j` | [ ] | J | Do we implement either `jal` or `jalr` ? |
+| jump | `jal` | [ ] | J |  |

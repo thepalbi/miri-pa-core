@@ -18,7 +18,7 @@ module single_cycle_top (
     logic writes_rd;
     logic is_store;
     logic is_load;
-    logic [11:0] imm;
+    logic [`DATA_WORD_SIZE-1:0] imm;
     logic [20:0] offset;
     logic [6:0] opcode;
     logic [2:0] funct3;
@@ -82,11 +82,9 @@ module single_cycle_top (
         .d_out(dmem_d_out)
     );
 
-    logic [`DATA_WORD_SIZE-1:0] imm_sign_extended;
     logic [`DATA_WORD_SIZE-1:0] alu_input2;
-    assign imm_sign_extended = {{ 20{imm[11]} }, imm};
     assign alu_input2 = (is_load || is_store || opcode == `OPCODE_OP_IMM) ?
-        imm_sign_extended : rf_b;
+        imm : rf_b;
 
     alu alu(
         .input1(rf_a),

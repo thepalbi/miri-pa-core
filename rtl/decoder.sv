@@ -11,12 +11,16 @@ module decoder (
     output logic writes_rd,
     output logic is_store,
     output logic is_load,
-    output logic [11:0] imm,
+    output logic [`DATA_WORD_SIZE-1:0] imm,
     output logic [20:0] offset,
     output logic [6:0] opcode,
     output logic [2:0] funct3,
     output logic [6:0] funct7
 );
+    localparam int IMM_SIZE = 12;
+
+    logic [IMM_SIZE-1:0] imm_12;
+
     assign opcode = ir[6:0];
     assign funct3 = ir[14:12];
     assign funct7 = ir[31:25];
@@ -40,12 +44,17 @@ module decoder (
             offset = { { 8{ir[31]} }, ir[31], ir[7], ir[30:25], ir[11:8], 1'b0};
     end
 
+    sign_extender #(.tgt_size(`DATA_WORD_SIZE), .src_size(IMM_SIZE)) se(
+        .src(imm_12),
+        .tgt(imm)
+    );
+
     always_comb begin: imm_pick
-        imm = 12'b0;
+        imm_12 = 0;
         if (opcode  == `OPCODE_OP_IMM || opcode == `OPCODE_LOAD)
-            imm = ir[31:20];
+            imm_12 = ir[31:20];
         else if (opcode == `OPCODE_STORE)
-            imm = {ir[31:25], ir[11:7]};
+            imm_12 = {ir[31:25], ir[11:7]};
     end
 
 endmodule

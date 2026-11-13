@@ -12,22 +12,14 @@ module single_cycle_top (
 );
 
     // ## SIGNALS
+    logic branch_taken;
 
-    // decoder signals
-    logic [4:0] rs1;
-    logic [4:0] rs2;
-    logic [4:0] rd;
-    logic writes_rd;
-    logic is_store;
-    logic is_load;
-    logic [`DATA_WORD_SIZE-1:0] imm;
-    logic [20:0] offset;
-    logic [6:0] opcode;
-    logic [2:0] funct3;
-    logic [6:0] funct7;
+    logic [4:0] rf_raddr_a;
+    logic [4:0] rf_raddr_b;
+    logic [4:0] rf_waddr_d;
 
-    logic [`DATA_WORD_SIZE-1:0] rf_a;
-    logic [`DATA_WORD_SIZE-1:0] rf_b;
+    logic [`DATA_WORD_SIZE-1:0] rf_rdata_a;
+    logic [`DATA_WORD_SIZE-1:0] rf_rdata_b;
     logic [`DATA_WORD_SIZE-1:0] rf_d;
 
     logic [`DATA_ADDR_SIZE-1:0] imem_raddr;
@@ -37,27 +29,27 @@ module single_cycle_top (
     logic [`DATA_WORD_SIZE-1:0] dmem_d_out;
     logic [`DATA_ADDR_SIZE-1:0] pc;
     logic [`DATA_WORD_SIZE-1:0] ir;
-    logic [`DATA_ADDR_SIZE-1:0] offset_eff;
     logic [`DATA_ADDR_SIZE-1:0] dmem_rw_addr;
 
-    // PC block
-    logic pc_wen;
-    logic [`DATA_ADDR_SIZE-1:0] branch_target;
+    logic [4:0] d_rf_waddr_d;
+    logic [`DATA_WORD_SIZE-1:0] d_aluin_a;
+    logic [`DATA_WORD_SIZE-1:0] d_aluin_b;
+    logic d_pc_wen;
+    logic [`DATA_ADDR_SIZE-1:0] d_branch_target;
 
-    logic branch_taken;
+    logic [6:0] d_opcode;
+    logic [2:0] d_funct3;
+    logic [6:0] d_funct7;
 
-    // ALU auxiliary signals
-
-    logic [`DATA_WORD_SIZE-1:0] alu_input2;
+    logic d_writes_rd;
+    logic d_is_store;
+    logic d_is_load;
 
     // ## datapath
 
     assign imem_raddr = pc;
-    assign offset_eff = offset[`DATA_ADDR_SIZE-1:0];
-    assign rf_d = is_load ? dmem_d_out : alu_out;
+    assign rf_d = d_is_load ? dmem_d_out : alu_out;
     assign dmem_rw_addr = alu_out[`DATA_ADDR_SIZE-1:0];
-    assign alu_input2 = (is_load || is_store || opcode == `OPCODE_OP_IMM) ?
-        imm : rf_b;
 
     // ## modules
     // ### common
@@ -75,9 +67,9 @@ module single_cycle_top (
     memory_bank dmem(
         .clk(clk),
         .rst(rst),
-        .wen(is_store && run),
+        .wen(d_is_store && run),
         .waddr(dmem_rw_addr),
-        .wdata(rf_b),
+        .wdata(rf_rdata_b),
         .raddr(dmem_rw_addr),
         .rdata(dmem_d_out)
     );
@@ -87,34 +79,46 @@ module single_cycle_top (
     f_stage f_stage(
     .clk(clk),
     .rst(rst),
-    .wen_pc(pc_wen),
-    .waddr_pc(branch_target),
+    .wen_pc(d_pc_wen),
+    .waddr_pc(d_branch_target),
     .imem_rdata(imem_rdata),
     .f_pc(pc),
     .f_ir(ir)
     );
 
+    d_stage d_stage(
+        .clk(clk),
+        .rst(rst),
+        .run(run),
+        .branch_taken(branch_taken),
+        .f_pc(pc),
+        .f_ir(ir),
 
-    branch_tgt_gen branch_tgt_gen (
-	.run         (run),
-	.pc          (pc),
-	.opcode      (opcode),
-	.branch_taken(branch_taken),
-	.offset      (offset_eff),
-	.pc_wen      (pc_wen),
-	.branch_tgt  (branch_target)
+        .rf_raddr_a(rf_raddr_a),
+        .rf_raddr_b(rf_raddr_b),
+        .rf_rdata_a(rf_rdata_a),
+        .rf_rdata_b(rf_rdata_b),
+
+        .rf_waddr_d(d_rf_waddr_d),
+        .aluin_a(d_aluin_a),
+        .aluin_b(d_aluin_b),
+        .pc_wen(d_pc_wen),
+        .branch_target(d_branch_target),
+        .opcode(d_opcode),
+        .funct3(d_funct3),
+        .funct7(d_funct7),
+        .writes_rd(d_writes_rd),
+        .is_store(d_is_store),
+        .is_load(d_is_load)
     );
 
-    // decoder consumes all top-instantiated wires since they have
-    // identical name.
-    decoder dec(.*);
 
     alu alu(
-        .input1(rf_a),
-        .input2(alu_input2),
-        .opcode(opcode),
-        .funct3(funct3),
-        .funct7(funct7),
+        .input1(d_aluin_a),
+        .input2(d_aluin_b),
+        .opcode(d_opcode),
+        .funct3(d_funct3),
+        .funct7(d_funct7),
         .result(alu_out),
         .taken(branch_taken)
     );
@@ -122,13 +126,13 @@ module single_cycle_top (
     register_file rf(
         .clk(clk),
         .rst(rst),
-        .wen(writes_rd && run),
-        .waddr_d(rd),
+        .wen(d_writes_rd && run),
+        .waddr_d(d_rf_waddr_d),
         .wdata_d(rf_d),
-        .raddr_a(rs1),
-        .raddr_b(rs2),
-        .rdata_a(rf_a),
-        .rdata_b(rf_b)
+        .raddr_a(rf_raddr_a),
+        .raddr_b(rf_raddr_b),
+        .rdata_a(rf_rdata_a),
+        .rdata_b(rf_rdata_b)
     );
 
 endmodule

@@ -4,7 +4,7 @@
 
 module f_stage(
     input logic clk,
-    input logic rst,
+    (* unused *) input logic rst,
 
     // PC write signals
     input logic wen_pc,

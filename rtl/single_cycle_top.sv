@@ -12,7 +12,7 @@ module single_cycle_top (
 );
 
     // ## SIGNALS
-    logic branch_taken;
+    logic a_btaken;
 
     logic [4:0] rf_raddr_a;
     logic [4:0] rf_raddr_b;
@@ -27,7 +27,7 @@ module single_cycle_top (
     logic [`DATA_ADDR_SIZE-1:0] imem_raddr;
     logic [`DATA_WORD_SIZE-1:0] imem_rdata;
 
-    logic [`DATA_WORD_SIZE-1:0] alu_out;
+    logic [`DATA_WORD_SIZE-1:0] a_aluout;
     logic [`DATA_WORD_SIZE-1:0] dmem_d_out;
     logic [`DATA_ADDR_SIZE-1:0] pc;
     logic [`DATA_WORD_SIZE-1:0] ir;
@@ -50,8 +50,8 @@ module single_cycle_top (
     // ## datapath
 
     assign imem_raddr = pc;
-    assign rf_d = d_is_load ? dmem_d_out : alu_out;
-    assign dmem_rw_addr = alu_out[`DATA_ADDR_SIZE-1:0];
+    assign rf_d = d_is_load ? dmem_d_out : a_aluout;
+    assign dmem_rw_addr = a_aluout[`DATA_ADDR_SIZE-1:0];
     assign dmem_wen = run & d_is_store;
     assign rf_wen = run & d_writes_rd;
 
@@ -78,6 +78,18 @@ module single_cycle_top (
         .rdata(dmem_d_out)
     );
 
+    register_file rf(
+        .clk(clk),
+        .rst(rst),
+        .wen(rf_wen),
+        .waddr_d(d_rf_waddr_d),
+        .wdata_d(rf_d),
+        .raddr_a(rf_raddr_a),
+        .raddr_b(rf_raddr_b),
+        .rdata_a(rf_rdata_a),
+        .rdata_b(rf_rdata_b)
+    );
+
     // ### stages
 
     f_stage f_stage(
@@ -94,7 +106,7 @@ module single_cycle_top (
         .clk(clk),
         .rst(rst),
         .run(run),
-        .branch_taken(branch_taken),
+        .branch_taken(a_btaken),
         .f_pc(pc),
         .f_ir(ir),
 
@@ -116,27 +128,17 @@ module single_cycle_top (
         .is_load(d_is_load)
     );
 
-
-    alu alu(
-        .input1(d_aluin_a),
-        .input2(d_aluin_b),
-        .opcode(d_opcode),
-        .funct3(d_funct3),
-        .funct7(d_funct7),
-        .result(alu_out),
-        .taken(branch_taken)
-    );
-
-    register_file rf(
+    a_stage a_stage(
         .clk(clk),
         .rst(rst),
-        .wen(rf_wen),
-        .waddr_d(d_rf_waddr_d),
-        .wdata_d(rf_d),
-        .raddr_a(rf_raddr_a),
-        .raddr_b(rf_raddr_b),
-        .rdata_a(rf_rdata_a),
-        .rdata_b(rf_rdata_b)
+        .d_aluin_a(d_aluin_a),
+        .d_aluin_b(d_aluin_b),
+        .d_opcode(d_opcode),
+        .d_funct3(d_funct3),
+        .d_funct7(d_funct7),
+
+        .aluout(a_aluout),
+        .btaken(a_btaken)
     );
 
 endmodule

@@ -43,14 +43,18 @@ module single_cycle_top (
     assign dmem_rw_addr = alu_out[`DATA_ADDR_SIZE-1:0];
 
     // PC block
-    // TODO: Need to refactor this into a separate jump_target_builder
-    // TODO: Check that we are doing byte-addressable on the imem
-    logic pc_w_en;
+    logic pc_wen;
     logic [`DATA_ADDR_SIZE-1:0] branch_target;
-    logic signed [`DATA_ADDR_SIZE-1:0] word_offset;
-    assign word_offset = $signed(offset_eff) / 4;  // bytes -> words
-    assign branch_target = run ? pc + word_offset : '0;
-    assign pc_w_en = !run | branch_taken | (opcode == `OPCODE_JAL);
+
+    branch_tgt_gen branch_tgt_gen (
+	.run         (run),
+	.pc          (pc),
+	.opcode      (opcode),
+	.branch_taken(branch_taken),
+	.offset      (offset_eff),
+	.pc_wen      (pc_wen),
+	.branch_tgt  (branch_target)
+    );
 
     // decoder consumes all top-instantiated wires since they have
     // identical name.
@@ -58,7 +62,7 @@ module single_cycle_top (
 
     pc pc_mod(
         .clk(clk),
-        .w_en(pc_w_en),
+        .w_en(pc_wen),
         .addr_in(branch_target),
         .out(pc)
     );

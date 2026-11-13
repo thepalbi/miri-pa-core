@@ -11,10 +11,16 @@ module a_stage(
     input logic [6:0] d_opcode,
     input logic [2:0] d_funct3,
     input logic [6:0] d_funct7,
+    input logic d_is_store,
 
     output logic [`DATA_WORD_SIZE-1:0] aluout,
-    output logic btaken
+    output logic [`DATA_WORD_SIZE-1:0] aluin_b,
+    output logic btaken,
+    output logic is_store
 );
+
+    assign is_store = d_is_store;
+    assign aluin_b = d_aluin_b;
 
     alu alu(
         .input1(d_aluin_a),

@@ -66,22 +66,22 @@ module single_cycle_top (
     memory_bank imem(
         .clk(clk),
         .rst(rst),
-        .w_en(imem_w_en),
-        .w_addr(imem_addr),
-        .d_in(imem_d),
-        .r_addr(pc),
-        .d_out(ir)
+        .wen(imem_w_en),
+        .waddr(imem_addr),
+        .wdata(imem_d),
+        .raddr(pc),
+        .rdata(ir)
     );
 
 
     memory_bank dmem(
         .clk(clk),
         .rst(rst),
-        .w_en(is_store && run),
-        .w_addr(dmem_rw_addr),
-        .d_in(rf_b),
-        .r_addr(dmem_rw_addr),
-        .d_out(dmem_d_out)
+        .wen(is_store && run),
+        .waddr(dmem_rw_addr),
+        .wdata(rf_b),
+        .raddr(dmem_rw_addr),
+        .rdata(dmem_d_out)
     );
 
     logic [`DATA_WORD_SIZE-1:0] alu_input2;
@@ -101,13 +101,13 @@ module single_cycle_top (
     register_file rf(
         .clk(clk),
         .rst(rst),
-        .w_en(writes_rd && run),
-        .rd(rd),
-        .d(rf_d),
-        .ra(rs1),
-        .rb(rs2),
-        .a(rf_a),
-        .b(rf_b)
+        .wen(writes_rd && run),
+        .waddr_d(rd),
+        .wdata_d(rf_d),
+        .raddr_a(rs1),
+        .raddr_b(rs2),
+        .rdata_a(rf_a),
+        .rdata_b(rf_b)
     );
 
 endmodule

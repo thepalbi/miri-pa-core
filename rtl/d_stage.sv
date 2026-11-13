@@ -3,8 +3,8 @@
 `include "constants.sv"
 
 module d_stage(
-    input logic clk,
-    input logic rst,
+    (* unused *) input logic clk,
+    (* unused *) input logic rst,
     input logic run,
 
     input logic branch_taken,

@@ -22,7 +22,6 @@ module single_cycle_top (
 
     logic [`DATA_WORD_SIZE-1:0] rf_rdata_a;
     logic [`DATA_WORD_SIZE-1:0] rf_rdata_b;
-    logic [`DATA_WORD_SIZE-1:0] rf_d;
 
     logic [`DATA_ADDR_SIZE-1:0] imem_raddr;
     logic [`DATA_WORD_SIZE-1:0] imem_rdata;
@@ -50,12 +49,22 @@ module single_cycle_top (
 
     logic [`DATA_WORD_SIZE-1:0] a_aluin_b;
     logic a_is_store;
+    logic a_is_load;
+    logic a_writes_rd;
+    logic [4:0] a_rf_waddr_d;
+
+    logic [`DATA_WORD_SIZE-1:0] m_dmem_rdata;
+    logic m_is_load;
+    logic m_writes_rd;
+    logic [`DATA_WORD_SIZE-1:0] m_aluout;
+    logic [4:0] m_rf_waddr_d;
+
+    logic [`DATA_WORD_SIZE-1:0] rf_wdata;
+    logic [4:0] rf_waddr;
 
     // ## datapath
 
     assign imem_raddr = pc;
-    assign rf_d = d_is_load ? dmem_rdata : a_aluout;
-    assign rf_wen = run & d_writes_rd;
 
     // ## modules
     // ### common
@@ -83,9 +92,11 @@ module single_cycle_top (
     register_file rf(
         .clk(clk),
         .rst(rst),
+
         .wen(rf_wen),
-        .waddr_d(d_rf_waddr_d),
-        .wdata_d(rf_d),
+        .waddr_d(rf_waddr),
+        .wdata_d(rf_wdata),
+
         .raddr_a(rf_raddr_a),
         .raddr_b(rf_raddr_b),
         .rdata_a(rf_rdata_a),
@@ -139,11 +150,17 @@ module single_cycle_top (
         .d_funct3(d_funct3),
         .d_funct7(d_funct7),
         .d_is_store(d_is_store),
+        .d_is_load(d_is_load),
+        .d_writes_rd(d_writes_rd),
+        .d_rf_waddr_d(d_rf_waddr_d),
 
         .aluout(a_aluout),
         .aluin_b(a_aluin_b),
         .btaken(a_btaken),
-        .is_store(a_is_store)
+        .is_store(a_is_store),
+        .is_load(a_is_load),
+        .writes_rd(a_writes_rd),
+        .rf_waddr_d(a_rf_waddr_d)
     );
 
     m_stage m_stage (
@@ -153,9 +170,32 @@ module single_cycle_top (
     	.a_is_store (a_is_store),
     	.a_aluout   (a_aluout),
     	.a_aluin_b  (a_aluin_b),
+        .a_is_load(a_is_load),
+        .a_writes_rd(a_writes_rd),
+        .a_rf_waddr_d(a_rf_waddr_d),
+        .dmem_rdata_port(dmem_rdata),
     	.dmem_wen   (dmem_wen),
     	.dmem_rwaddr(dmem_rwaddr),
-    	.dmem_wdata (dmem_wdata)
+    	.dmem_wdata (dmem_wdata),
+        .dmem_rdata(m_dmem_rdata),
+        .is_load(m_is_load),
+        .writes_rd(m_writes_rd),
+        .aluout(m_aluout),
+        .rf_waddr_d(m_rf_waddr_d)
+    );
+
+    wb_stage wb_stage (
+    	.clk         (clk),
+    	.rst         (rst),
+    	.run         (run),
+    	.m_is_load   (m_is_load),
+    	.m_writes_rd (m_writes_rd),
+    	.m_rf_waddr_d(m_rf_waddr_d),
+    	.m_aluout    (m_aluout),
+    	.m_dmem_rdata(m_dmem_rdata),
+    	.rf_wen      (rf_wen),
+    	.rf_waddr    (rf_waddr),
+    	.rf_wdata    (rf_wdata)
     );
 
 endmodule

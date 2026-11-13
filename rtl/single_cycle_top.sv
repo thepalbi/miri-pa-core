@@ -16,7 +16,9 @@ module single_cycle_top (
 
     logic [4:0] rf_raddr_a;
     logic [4:0] rf_raddr_b;
-    logic [4:0] rf_waddr_d;
+    logic rf_wen;
+
+    logic dmem_wen;
 
     logic [`DATA_WORD_SIZE-1:0] rf_rdata_a;
     logic [`DATA_WORD_SIZE-1:0] rf_rdata_b;
@@ -50,6 +52,8 @@ module single_cycle_top (
     assign imem_raddr = pc;
     assign rf_d = d_is_load ? dmem_d_out : alu_out;
     assign dmem_rw_addr = alu_out[`DATA_ADDR_SIZE-1:0];
+    assign dmem_wen = run & d_is_store;
+    assign rf_wen = run & d_writes_rd;
 
     // ## modules
     // ### common
@@ -67,7 +71,7 @@ module single_cycle_top (
     memory_bank dmem(
         .clk(clk),
         .rst(rst),
-        .wen(d_is_store && run),
+        .wen(dmem_wen),
         .waddr(dmem_rw_addr),
         .wdata(rf_rdata_b),
         .raddr(dmem_rw_addr),
@@ -77,13 +81,13 @@ module single_cycle_top (
     // ### stages
 
     f_stage f_stage(
-    .clk(clk),
-    .rst(rst),
-    .wen_pc(d_pc_wen),
-    .waddr_pc(d_branch_target),
-    .imem_rdata(imem_rdata),
-    .f_pc(pc),
-    .f_ir(ir)
+        .clk(clk),
+        .rst(rst),
+        .wen_pc(d_pc_wen),
+        .waddr_pc(d_branch_target),
+        .imem_rdata(imem_rdata),
+        .f_pc(pc),
+        .f_ir(ir)
     );
 
     d_stage d_stage(
@@ -126,7 +130,7 @@ module single_cycle_top (
     register_file rf(
         .clk(clk),
         .rst(rst),
-        .wen(d_writes_rd && run),
+        .wen(rf_wen),
         .waddr_d(d_rf_waddr_d),
         .wdata_d(rf_d),
         .raddr_a(rf_raddr_a),

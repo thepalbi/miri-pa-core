@@ -30,6 +30,9 @@ module single_cycle_top (
     logic [`DATA_WORD_SIZE-1:0] rf_b;
     logic [`DATA_WORD_SIZE-1:0] rf_d;
 
+    logic [`DATA_ADDR_SIZE-1:0] imem_raddr;
+    logic [`DATA_WORD_SIZE-1:0] imem_rdata;
+
     logic [`DATA_WORD_SIZE-1:0] alu_out;
     logic [`DATA_WORD_SIZE-1:0] dmem_d_out;
     logic [`DATA_ADDR_SIZE-1:0] pc;
@@ -49,6 +52,7 @@ module single_cycle_top (
 
     // ## datapath
 
+    assign imem_raddr = pc;
     assign offset_eff = offset[`DATA_ADDR_SIZE-1:0];
     assign rf_d = is_load ? dmem_d_out : alu_out;
     assign dmem_rw_addr = alu_out[`DATA_ADDR_SIZE-1:0];
@@ -56,6 +60,40 @@ module single_cycle_top (
         imm : rf_b;
 
     // ## modules
+    // ### common
+
+    memory_bank imem(
+        .clk(clk),
+        .rst(rst),
+        .wen(imem_w_en),
+        .waddr(imem_addr),
+        .wdata(imem_d),
+        .raddr(imem_raddr),
+        .rdata(imem_rdata)
+    );
+
+    memory_bank dmem(
+        .clk(clk),
+        .rst(rst),
+        .wen(is_store && run),
+        .waddr(dmem_rw_addr),
+        .wdata(rf_b),
+        .raddr(dmem_rw_addr),
+        .rdata(dmem_d_out)
+    );
+
+    // ### stages
+
+    f_stage f_stage(
+    .clk(clk),
+    .rst(rst),
+    .wen_pc(pc_wen),
+    .waddr_pc(branch_target),
+    .imem_rdata(imem_rdata),
+    .f_pc(pc),
+    .f_ir(ir)
+    );
+
 
     branch_tgt_gen branch_tgt_gen (
 	.run         (run),
@@ -70,34 +108,6 @@ module single_cycle_top (
     // decoder consumes all top-instantiated wires since they have
     // identical name.
     decoder dec(.*);
-
-    pc pc_mod(
-        .clk(clk),
-        .w_en(pc_wen),
-        .addr_in(branch_target),
-        .out(pc)
-    );
-
-    memory_bank imem(
-        .clk(clk),
-        .rst(rst),
-        .wen(imem_w_en),
-        .waddr(imem_addr),
-        .wdata(imem_d),
-        .raddr(pc),
-        .rdata(ir)
-    );
-
-
-    memory_bank dmem(
-        .clk(clk),
-        .rst(rst),
-        .wen(is_store && run),
-        .waddr(dmem_rw_addr),
-        .wdata(rf_b),
-        .raddr(dmem_rw_addr),
-        .rdata(dmem_d_out)
-    );
 
     alu alu(
         .input1(rf_a),

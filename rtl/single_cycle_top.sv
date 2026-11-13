@@ -11,6 +11,8 @@ module single_cycle_top (
     input logic [`DATA_WORD_SIZE-1:0] imem_d
 );
 
+    // ## SIGNALS
+
     // decoder signals
     logic [4:0] rs1;
     logic [4:0] rs2;
@@ -35,16 +37,25 @@ module single_cycle_top (
     logic [`DATA_ADDR_SIZE-1:0] offset_eff;
     logic [`DATA_ADDR_SIZE-1:0] dmem_rw_addr;
 
-    logic branch_taken;
-
-    assign offset_eff = offset[`DATA_ADDR_SIZE-1:0];
-
-    assign rf_d = is_load ? dmem_d_out : alu_out;
-    assign dmem_rw_addr = alu_out[`DATA_ADDR_SIZE-1:0];
-
     // PC block
     logic pc_wen;
     logic [`DATA_ADDR_SIZE-1:0] branch_target;
+
+    logic branch_taken;
+
+    // ALU auxiliary signals
+
+    logic [`DATA_WORD_SIZE-1:0] alu_input2;
+
+    // ## datapath
+
+    assign offset_eff = offset[`DATA_ADDR_SIZE-1:0];
+    assign rf_d = is_load ? dmem_d_out : alu_out;
+    assign dmem_rw_addr = alu_out[`DATA_ADDR_SIZE-1:0];
+    assign alu_input2 = (is_load || is_store || opcode == `OPCODE_OP_IMM) ?
+        imm : rf_b;
+
+    // ## modules
 
     branch_tgt_gen branch_tgt_gen (
 	.run         (run),
@@ -87,10 +98,6 @@ module single_cycle_top (
         .raddr(dmem_rw_addr),
         .rdata(dmem_d_out)
     );
-
-    logic [`DATA_WORD_SIZE-1:0] alu_input2;
-    assign alu_input2 = (is_load || is_store || opcode == `OPCODE_OP_IMM) ?
-        imm : rf_b;
 
     alu alu(
         .input1(rf_a),

@@ -34,22 +34,22 @@ async def test_write_then_read(dut):
     await Timer(20, unit="ns")
     await reset_dut(dut)
 
-    dut.w_en.value = 1
+    dut.wen.value = 1
     for i, value in enumerate(test_values, start=1):
         await FallingEdge(dut.clk)
-        dut.rd.value = i
-        dut.d.value = value
+        dut.waddr_d.value = i
+        dut.wdata_d.value = value
 
     await FallingEdge(dut.clk)
 
-    dut.w_en.value = 0
+    dut.wen.value = 0
     for i, value in enumerate(test_values, start=1):
-        dut.ra.value = i
-        dut.rb.value = i
+        dut.raddr_a.value = i
+        dut.raddr_b.value = i
         await RisingEdge(dut.clk)
         await Timer(2, unit="ns")
-        assert dut.a.value == value, f"expected reg[{i}] (port a) to be {value}"
-        assert dut.b.value == value, f"expected reg[{i}] (port b) to be {value}"
+        assert dut.rdata_a.value == value, f"expected reg[{i}] (port a) to be {value}"
+        assert dut.rdata_b.value == value, f"expected reg[{i}] (port b) to be {value}"
 
 
 @cocotb.test()
@@ -63,16 +63,16 @@ async def test_write_read_interleaved(dut):
     await FallingEdge(dut.clk)
 
     for i, value in enumerate(test_values, start=1):
-        dut.w_en.value = 1
-        dut.rd.value = i
-        dut.d.value = value
+        dut.wen.value = 1
+        dut.waddr_d.value = i
+        dut.wdata_d.value = value
         await FallingEdge(dut.clk)
 
-        dut.w_en.value = 0
-        dut.ra.value = i
+        dut.wen.value = 0
+        dut.raddr_a.value = i
         await RisingEdge(dut.clk)
         await Timer(2, unit="ns")
-        assert dut.a.value == value, f"expected reg[{i}] to be {value}"
+        assert dut.rdata_a.value == value, f"expected reg[{i}] to be {value}"
 
         await FallingEdge(dut.clk)
 
@@ -84,15 +84,15 @@ async def test_zero_register_ignores_writes(dut):
     await Timer(20, unit="ns")
     await reset_dut(dut)
 
-    dut.w_en.value = 1
+    dut.wen.value = 1
     await FallingEdge(dut.clk)
-    dut.rd.value = 0
-    dut.d.value = 0xFF
+    dut.waddr_d.value = 0
+    dut.wdata_d.value = 0xFF
 
     await FallingEdge(dut.clk)
 
-    dut.w_en.value = 0
-    dut.ra.value = 0
+    dut.wen.value = 0
+    dut.raddr_a.value = 0
     await RisingEdge(dut.clk)
     await Timer(2, unit="ns")
-    assert dut.a.value == 0, "reg[0] should stay zero even after a write attempt"
+    assert dut.rdata_a.value == 0, "reg[0] should stay zero even after a write attempt"

@@ -9,28 +9,28 @@ module register_file #(
     input clk,
     input rst,
 
-    input w_en,
-    input [addr_size-1:0] rd,
-    input [word_size-1:0] d,
+    input wen,
+    input [addr_size-1:0] waddr_d,
+    input [word_size-1:0] wdata_d,
 
-    input [addr_size-1:0] ra,
-    input [addr_size-1:0] rb,
-    output logic [word_size-1:0] a,
-    output logic [word_size-1:0] b
+    input [addr_size-1:0] raddr_a,
+    input [addr_size-1:0] raddr_b,
+    output logic [word_size-1:0] rdata_a,
+    output logic [word_size-1:0] rdata_b
 );
     reg [word_size-1:0] regs [0:(2 ** addr_size)-1];
 
     integer i;
 
-    always_comb a = regs[ra];
-    always_comb b = regs[rb];
+    always_comb rdata_a = regs[raddr_a];
+    always_comb rdata_b = regs[raddr_b];
 
     always_ff @ (posedge clk) begin
         if (rst) begin
             for (i = 0; i < (2 ** addr_size); i = i + 1)
                 regs[i] <= 0;
-        end else if (w_en && rd != 0) begin
-            regs[rd] <= d;
+        end else if (wen && waddr_d != 0) begin
+            regs[waddr_d] <= wdata_d;
         end
     end
 

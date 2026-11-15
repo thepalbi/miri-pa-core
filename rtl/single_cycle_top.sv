@@ -11,6 +11,8 @@ module single_cycle_top (
     input logic [`DATA_WORD_SIZE-1:0] imem_d
 );
 
+    // ## SIGNALS
+
     // decoder signals
     logic [4:0] rs1;
     logic [4:0] rs2;
@@ -35,22 +37,35 @@ module single_cycle_top (
     logic [`DATA_ADDR_SIZE-1:0] offset_eff;
     logic [`DATA_ADDR_SIZE-1:0] dmem_rw_addr;
 
+    // PC block
+    logic pc_wen;
+    logic [`DATA_ADDR_SIZE-1:0] branch_target;
+
     logic branch_taken;
 
-    assign offset_eff = offset[`DATA_ADDR_SIZE-1:0];
+    // ALU auxiliary signals
 
+    logic [`DATA_WORD_SIZE-1:0] alu_input2;
+
+    // ## datapath
+
+    assign offset_eff = offset[`DATA_ADDR_SIZE-1:0];
     assign rf_d = is_load ? dmem_d_out : alu_out;
     assign dmem_rw_addr = alu_out[`DATA_ADDR_SIZE-1:0];
+    assign alu_input2 = (is_load || is_store || opcode == `OPCODE_OP_IMM) ?
+        imm : rf_b;
 
-    // PC block
-    // TODO: Need to refactor this into a separate jump_target_builder
-    // TODO: Check that we are doing byte-addressable on the imem
-    logic pc_w_en;
-    logic [`DATA_ADDR_SIZE-1:0] branch_target;
-    logic signed [`DATA_ADDR_SIZE-1:0] word_offset;
-    assign word_offset = $signed(offset_eff) / 4;  // bytes -> words
-    assign branch_target = run ? pc + word_offset : '0;
-    assign pc_w_en = !run | branch_taken | (opcode == `OPCODE_JAL);
+    // ## modules
+
+    branch_tgt_gen branch_tgt_gen (
+	.run         (run),
+	.pc          (pc),
+	.opcode      (opcode),
+	.branch_taken(branch_taken),
+	.offset      (offset_eff),
+	.pc_wen      (pc_wen),
+	.branch_tgt  (branch_target)
+    );
 
     // decoder consumes all top-instantiated wires since they have
     // identical name.
@@ -58,7 +73,7 @@ module single_cycle_top (
 
     pc pc_mod(
         .clk(clk),
-        .w_en(pc_w_en),
+        .w_en(pc_wen),
         .addr_in(branch_target),
         .out(pc)
     );
@@ -66,27 +81,23 @@ module single_cycle_top (
     memory_bank imem(
         .clk(clk),
         .rst(rst),
-        .w_en(imem_w_en),
-        .w_addr(imem_addr),
-        .d_in(imem_d),
-        .r_addr(pc),
-        .d_out(ir)
+        .wen(imem_w_en),
+        .waddr(imem_addr),
+        .wdata(imem_d),
+        .raddr(pc),
+        .rdata(ir)
     );
 
 
     memory_bank dmem(
         .clk(clk),
         .rst(rst),
-        .w_en(is_store && run),
-        .w_addr(dmem_rw_addr),
-        .d_in(rf_b),
-        .r_addr(dmem_rw_addr),
-        .d_out(dmem_d_out)
+        .wen(is_store && run),
+        .waddr(dmem_rw_addr),
+        .wdata(rf_b),
+        .raddr(dmem_rw_addr),
+        .rdata(dmem_d_out)
     );
-
-    logic [`DATA_WORD_SIZE-1:0] alu_input2;
-    assign alu_input2 = (is_load || is_store || opcode == `OPCODE_OP_IMM) ?
-        imm : rf_b;
 
     alu alu(
         .input1(rf_a),
@@ -101,13 +112,13 @@ module single_cycle_top (
     register_file rf(
         .clk(clk),
         .rst(rst),
-        .w_en(writes_rd && run),
-        .rd(rd),
-        .d(rf_d),
-        .ra(rs1),
-        .rb(rs2),
-        .a(rf_a),
-        .b(rf_b)
+        .wen(writes_rd && run),
+        .waddr_d(rd),
+        .wdata_d(rf_d),
+        .raddr_a(rs1),
+        .raddr_b(rs2),
+        .rdata_a(rf_a),
+        .rdata_b(rf_b)
     );
 
 endmodule

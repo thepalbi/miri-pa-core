@@ -25,21 +25,21 @@ async def test_read_then_write(dut):
 
     await Timer(20, unit="ns")
 
-    dut.w_en.value = 1
+    dut.wen.value = 1
     for i, word in enumerate(test_words):
         await FallingEdge(dut.clk)
-        dut.w_addr.value = i
-        dut.d_in.value = word
+        dut.waddr.value = i
+        dut.wdata.value = word
 
     await FallingEdge(dut.clk)
 
-    dut.w_addr.value = 0
-    dut.w_en.value = 0
+    dut.waddr.value = 0
+    dut.wen.value = 0
     for i, word in enumerate(test_words):
-        dut.r_addr.value = i
+        dut.raddr.value = i
         await RisingEdge(dut.clk)
         await Timer(2, unit="ns")
-        assert dut.d_out.value == word, f"expected mem[{i}] to be {word}"
+        assert dut.rdata.value == word, f"expected mem[{i}] to be {word}"
 
 
 import os
@@ -50,7 +50,7 @@ async def check(condition, msg=""):
       await Timer(FAIL_HOLD_MS, unit="ns")
       raise AssertionError(msg)
 # usage
-# await check(dut.d_out.value == word, f"expected mem[{i}] to be {word}")
+# await check(dut.rdata.value == word, f"expected mem[{i}] to be {word}")
 
 
 @cocotb.test()
@@ -64,14 +64,14 @@ async def test_read_write_in_same_clk_posedge(dut):
 
     for i, word in enumerate(test_words):
         
-        dut.w_en.value = 1
-        dut.w_addr.value = i
-        dut.d_in.value = word
+        dut.wen.value = 1
+        dut.waddr.value = i
+        dut.wdata.value = word
 
-        dut.r_addr.value = i
+        dut.raddr.value = i
         await RisingEdge(dut.clk)
         await Timer(2, unit="ns")
-        await check(dut.d_out.value == word, f"expected mem[{i}] to be {word}")
+        await check(dut.rdata.value == word, f"expected mem[{i}] to be {word}")
 
         await FallingEdge(dut.clk)
 
@@ -85,33 +85,33 @@ async def test_sync_read_write(dut):
 
     await RisingEdge(dut.clk) # Start from fresh cycle
 
-    dut.w_en.value = 1
-    dut.w_addr.value = 0x01
-    dut.d_in.value = 0x0A
+    dut.wen.value = 1
+    dut.waddr.value = 0x01
+    dut.wdata.value = 0x0A
 
     await RisingEdge(dut.clk)
 
-    dut.w_addr.value = 0x02
-    dut.d_in.value = 0x0B
+    dut.waddr.value = 0x02
+    dut.wdata.value = 0x0B
 
     await RisingEdge(dut.clk)
 
-    dut.r_addr.value = 0x01
-    dut.w_addr.value = 0x02
-    dut.d_in.value = 0x0C
-
-    await RisingEdge(dut.clk)
-    await Timer(2, unit="ns")
-
-    assert dut.d_out.value == 0x0A
-
-    dut.r_addr.value = 0x02
-    dut.w_en.value = 0
+    dut.raddr.value = 0x01
+    dut.waddr.value = 0x02
+    dut.wdata.value = 0x0C
 
     await RisingEdge(dut.clk)
     await Timer(2, unit="ns")
 
-    assert dut.d_out.value == 0x0C
+    assert dut.rdata.value == 0x0A
+
+    dut.raddr.value = 0x02
+    dut.wen.value = 0
+
+    await RisingEdge(dut.clk)
+    await Timer(2, unit="ns")
+
+    assert dut.rdata.value == 0x0C
 
     # Wait a bit more to see results in waveform
     await Timer(10, unit="ns")

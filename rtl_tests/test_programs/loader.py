@@ -48,8 +48,8 @@ def program_from_elf_text(path: Path) -> list[int]:
 async def reset_core(dut):
     dut.run.value = 0
     dut.imem_w_en.value = 0
-    dut.imem_addr.value = 0
-    dut.imem_d.value = 0
+    dut.imem_waddr.value = 0
+    dut.imem_wdata.value = 0
     dut.rst.value = 1
     from cocotb.triggers import FallingEdge
 
@@ -64,7 +64,7 @@ async def load_imem(dut, program: list[int]):
 
     dut.imem_w_en.value = 1
     for i, instr in enumerate(program):
-        dut.imem_addr.value = i + 1
-        dut.imem_d.value = instr
+        dut.imem_waddr.value = i + 1
+        dut.imem_wdata.value = instr
         await FallingEdge(dut.clk)
     dut.imem_w_en.value = 0

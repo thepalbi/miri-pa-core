@@ -69,3 +69,48 @@ Each `test_*.py` module declares the Verilog file and top-level module it tests:
 VERILOG_SOURCES = "memory.sv"  # file in ../rtl
 TOPMODEL = "memory_bank"       # top-level module
 ```
+
+### Adding a RISC-V assembly test
+
+In tests for `single_cycle_top` (e.g., `test_single_cycle_top.py`), use `run_program` from `test_programs` to assemble RISC-V assembly on the fly via Docker, load IMEM, and run the core. Temporary build artifacts go into `asm_build/` (git-ignored).
+
+Docker must be running, with the toolchain image pulled beforehand:
+
+```bash
+docker pull pwn2de4d/riscv-toolchain:latest
+```
+
+**From a `.S` file** (pass a `Path`):
+
+```python
+from pathlib import Path
+import cocotb
+from test_programs import run_program
+
+PROGRAMS = Path(__file__).resolve().parent / "test_programs"
+
+@cocotb.test()
+async def test_loop_from_s_file(dut):
+    await run_program(dut, PROGRAMS / "test.S", cycles=80)
+    assert dut.rf.regs[1].value == 0
+    assert dut.rf.regs[2].value == 20
+```
+
+**From an inline assembly string** (pass a `str`):
+
+```python
+@cocotb.test()
+async def test_inline_asm(dut):
+    await run_program(
+        dut,
+        """
+        addi x1, x0, 5
+        addi x2, x1, 7
+        """,
+        cycles=10,
+    )
+    assert dut.rf.regs[1].value == 5
+    assert dut.rf.regs[2].value == 12
+```
+
+You can also pass `march="rv32im"` (default) or `clock_period_ns=10` to `run_program`, or call `assemble(source)` directly to get the `list[int]` instruction words.

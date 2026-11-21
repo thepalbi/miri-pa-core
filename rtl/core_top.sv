@@ -7,6 +7,7 @@ module core_top (
     input logic rst,
     input logic run,
     input logic imem_w_en,
+    input logic imem_rst,
     input logic [`DATA_ADDR_SIZE-1:0] imem_waddr,
     input logic [`DATA_WORD_SIZE-1:0] imem_wdata
 );
@@ -76,7 +77,7 @@ module core_top (
 
     memory_bank imem(
         .clk(clk),
-        .rst(rst),
+        .rst(imem_rst),
         .wen(imem_w_en),
         .waddr(imem_waddr),
         .wdata(imem_wdata),
@@ -113,6 +114,7 @@ module core_top (
     f_stage f_stage(
         .clk(clk),
         .rst(rst),
+        .run(run),
         .wen_pc(d_pc_wen),
         .waddr_pc(d_branch_target),
         .imem_rdata(imem_rdata),
@@ -128,23 +130,24 @@ module core_top (
         .f_pc(pc),
         .f_ir(ir),
 
+        .branch_taken(a_btaken),
+
         .rf_raddr_a(rf_raddr_a),
         .rf_raddr_b(rf_raddr_b),
         .rf_rdata_a(rf_rdata_a),
         .rf_rdata_b(rf_rdata_b),
-        .rf_waddr_d(d_rf_waddr_d),
 
-        .aluin_a(d_aluin_a),
-        .aluin_b(d_aluin_b),
-        .pc_wen(d_pc_wen),
-        .branch_target(d_branch_target),
-        .opcode(d_opcode),
-        .funct3(d_funct3),
-        .funct7(d_funct7),
-        .writes_rd(d_writes_rd),
-        .is_store(d_is_store),
-        .is_load(d_is_load),
-        .branch_taken(a_btaken)
+        .d_rf_waddr_d(d_rf_waddr_d),
+        .d_aluin_a(d_aluin_a),
+        .d_aluin_b(d_aluin_b),
+        .d_pc_wen(d_pc_wen),
+        .d_branch_target(d_branch_target),
+        .d_opcode(d_opcode),
+        .d_funct3(d_funct3),
+        .d_funct7(d_funct7),
+        .d_writes_rd(d_writes_rd),
+        .d_is_store(d_is_store),
+        .d_is_load(d_is_load)
     );
 
     a_stage a_stage(
@@ -161,13 +164,13 @@ module core_top (
         .d_writes_rd(d_writes_rd),
         .d_rf_waddr_d(d_rf_waddr_d),
 
-        .aluout(a_aluout),
-        .aluin_b(a_aluin_b),
-        .btaken(a_btaken),
-        .is_store(a_is_store),
-        .is_load(a_is_load),
-        .writes_rd(a_writes_rd),
-        .rf_waddr_d(a_rf_waddr_d)
+        .a_aluout(a_aluout),
+        .a_aluin_b(a_aluin_b),
+        .a_btaken(a_btaken),
+        .a_is_store(a_is_store),
+        .a_is_load(a_is_load),
+        .a_writes_rd(a_writes_rd),
+        .a_rf_waddr_d(a_rf_waddr_d)
     );
 
     m_stage m_stage (
@@ -186,12 +189,12 @@ module core_top (
     	.dmem_wen   (dmem_wen),
     	.dmem_rwaddr(dmem_rwaddr),
     	.dmem_wdata (dmem_wdata),
-        .dmem_rdata(m_dmem_rdata),
 
-        .is_load(m_is_load),
-        .writes_rd(m_writes_rd),
-        .aluout(m_aluout),
-        .rf_waddr_d(m_rf_waddr_d)
+        .m_dmem_rdata(m_dmem_rdata),
+        .m_is_load(m_is_load),
+        .m_writes_rd(m_writes_rd),
+        .m_aluout(m_aluout),
+        .m_rf_waddr_d(m_rf_waddr_d)
     );
 
     wb_stage wb_stage (

@@ -3,8 +3,8 @@
 `include "constants.sv"
 
 module a_stage(
-    (* unused *) input logic clk,
-    (* unused *) input logic rst,
+    input logic clk,
+    input logic rst,
 
     input logic [`DATA_WORD_SIZE-1:0] d_aluin_a,
     input logic [`DATA_WORD_SIZE-1:0] d_aluin_b,
@@ -16,14 +16,21 @@ module a_stage(
     input logic d_writes_rd,
     input logic [4:0] d_rf_waddr_d,
 
-    output logic [`DATA_WORD_SIZE-1:0] aluout,
-    output logic [`DATA_WORD_SIZE-1:0] aluin_b,
-    output logic btaken,
-    output logic is_store,
-    output logic is_load,
-    output logic writes_rd,
-    output logic [4:0] rf_waddr_d
+    output reg [`DATA_WORD_SIZE-1:0] a_aluout,
+    output reg [`DATA_WORD_SIZE-1:0] a_aluin_b,
+    output reg a_btaken,
+    output reg a_is_store,
+    output reg a_is_load,
+    output reg a_writes_rd,
+    output reg [4:0] a_rf_waddr_d
 );
+    logic [`DATA_WORD_SIZE-1:0] aluout;
+    logic [`DATA_WORD_SIZE-1:0] aluin_b;
+    logic btaken;
+    logic is_store;
+    logic is_load;
+    logic writes_rd;
+    logic [4:0] rf_waddr_d;
 
     assign is_store = d_is_store;
     assign aluin_b = d_aluin_b;
@@ -40,6 +47,27 @@ module a_stage(
         .result(aluout),
         .taken(btaken)
     );
+
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst) begin
+            a_aluout        <=0;
+            a_aluin_b       <=0;
+            a_btaken        <=0;
+            a_is_store      <=0;
+            a_is_load       <=0;
+            a_writes_rd     <=0;
+            a_rf_waddr_d    <=0;
+        end else begin
+            a_aluout        <=aluout;
+            a_aluin_b       <=aluin_b;
+            a_btaken        <=btaken;
+            a_is_store      <=is_store;
+            a_is_load       <=is_load;
+            a_writes_rd     <=writes_rd;
+            a_rf_waddr_d    <=rf_waddr_d;
+        end
+
+    end
 
 
 endmodule

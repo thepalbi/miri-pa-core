@@ -21,7 +21,7 @@ module memory_bank #(
     reg [word_size-1:0] bank [0:(2 ** addr_size)-1];
 
     integer i;
-    always_ff @ (posedge clk) begin : write_path
+    always_ff @ (posedge clk or posedge rst) begin : write_path
         if (rst) begin
             for (i = 0; i < (2 ** addr_size); i = i + 1)
                 bank[i] <= 0;

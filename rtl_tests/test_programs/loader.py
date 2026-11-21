@@ -72,3 +72,12 @@ async def load_imem(dut, program: list[int]):
         dut.imem_wdata.value = instr
         await RisingEdge(dut.clk)
     dut.imem_w_en.value = 0
+
+
+def load_dmem(dut, preconditions):
+    """Pre-load data memory.
+
+    Must run after ``reset_core``: the memory bank clears itself on reset.
+    """
+    for pre in preconditions:
+        dut.dmem.bank[pre.index].value = pre.value

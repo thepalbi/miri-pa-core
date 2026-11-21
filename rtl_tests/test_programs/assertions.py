@@ -1,21 +1,45 @@
-"""Post-condition assertions embedded in assembly comments.
+"""Pre- and post-conditions embedded in assembly comments.
 
-An assertion is a comment whose text starts with ``!``, for example::
+A comment whose text starts with ``!`` is a *pre-condition*: it is evaluated
+before the program runs, and currently only data-memory pre-loading is
+supported::
 
-    # !rf[1] == 0
-    // !rf[2] == 20
+    # !dmem[0x100] = 0xdeadbeef
+    // !dmem[16] = 42
 
-Only register-file checks are supported for now. The right-hand side may be a
-decimal or hexadecimal integer.
+A comment whose text starts with ``?`` is a *post-condition* (an assertion
+checked after the program runs), for example::
+
+    # ?rf[1] == 0
+    // ?rf[2] == 20
+    # ?dmem[0x100] == 0xdeadbeef
+
+Integers may be decimal or hexadecimal. ``rf[i]`` refers to register-file
+index ``i``; ``dmem[a]`` refers to data-memory word address ``a``.
 """
 
 from dataclasses import dataclass
 import re
 
-_ASSERTION_RE = re.compile(
-    r"!\s*(?P<target>[A-Za-z_]\w*)\s*\[\s*(?P<index>\d+)\s*\]"
-    r"\s*==\s*(?P<expected>[+-]?(?:0[xX][0-9a-fA-F]+|\d+))"
+_INTEGER = r"[+-]?(?:0[xX][0-9a-fA-F]+|\d+)"
+
+_PRE_RE = re.compile(
+    r"!\s*(?P<target>[A-Za-z_]\w*)\s*\[\s*(?P<index>" + _INTEGER + r")\s*\]"
+    r"\s*=\s*(?P<value>" + _INTEGER + r")"
 )
+
+_POST_RE = re.compile(
+    r"\?\s*(?P<target>[A-Za-z_]\w*)\s*\[\s*(?P<index>" + _INTEGER + r")\s*\]"
+    r"\s*==\s*(?P<expected>" + _INTEGER + r")"
+)
+
+
+@dataclass(frozen=True)
+class Precondition:
+    target: str
+    index: int
+    value: int
+    line: int
 
 
 @dataclass(frozen=True)
@@ -40,35 +64,64 @@ def _find_comment(line: str) -> tuple[int, str] | None:
     return start, line[start + marker_len :]
 
 
-def _parse_comment(comment: str, line: int) -> Assertion | None:
+def _parse_comment(
+    comment: str, line: int
+) -> Precondition | Assertion | None:
     text = comment.strip()
-    if not text.startswith("!"):
-        return None
 
-    match = _ASSERTION_RE.fullmatch(text)
-    if match is None:
-        raise ValueError(
-            f"Malformed assertion on line {line}: expected "
-            f"'!rf[<index>] == <integer>', got {text!r}"
+    if text.startswith("!"):
+        match = _PRE_RE.fullmatch(text)
+        if match is None:
+            raise ValueError(
+                f"Malformed pre-condition on line {line}: expected "
+                f"'!dmem[<address>] = <integer>', got {text!r}"
+            )
+
+        target = match.group("target")
+        if target != "dmem":
+            raise ValueError(
+                f"Unsupported pre-condition target {target!r} on line {line} "
+                "(only 'dmem' is supported)"
+            )
+
+        return Precondition(
+            target=target,
+            index=int(match.group("index"), 0),
+            value=int(match.group("value"), 0),
+            line=line,
         )
 
-    target = match.group("target")
-    if target != "rf":
-        raise ValueError(
-            f"Unsupported assertion target {target!r} on line {line} "
-            "(only 'rf' is supported)"
+    if text.startswith("?"):
+        match = _POST_RE.fullmatch(text)
+        if match is None:
+            raise ValueError(
+                f"Malformed post-condition on line {line}: expected "
+                f"'?rf[<index>] == <integer>' or '?dmem[<address>] == "
+                f"<integer>', got {text!r}"
+            )
+
+        target = match.group("target")
+        if target not in ("rf", "dmem"):
+            raise ValueError(
+                f"Unsupported post-condition target {target!r} on line {line} "
+                "(only 'rf' and 'dmem' are supported)"
+            )
+
+        return Assertion(
+            target=target,
+            index=int(match.group("index"), 0),
+            expected=int(match.group("expected"), 0),
+            line=line,
         )
 
-    return Assertion(
-        target=target,
-        index=int(match.group("index")),
-        expected=int(match.group("expected"), 0),
-        line=line,
-    )
+    return None
 
 
-def extract_assertions(source: str) -> tuple[str, list[Assertion]]:
-    """Extract assertions from ``source`` and return source with them removed."""
+def extract_directives(
+    source: str,
+) -> tuple[str, list[Precondition], list[Assertion]]:
+    """Extract pre- and post-conditions from ``source``, removing them."""
+    preconditions: list[Precondition] = []
     assertions: list[Assertion] = []
     cleaned_lines: list[str] = []
 
@@ -82,27 +135,36 @@ def extract_assertions(source: str) -> tuple[str, list[Assertion]]:
             continue
 
         comment_start, comment_text = comment
-        assertion = _parse_comment(comment_text, line_number)
-        if assertion is None:
+        directive = _parse_comment(comment_text, line_number)
+        if directive is None:
             cleaned_lines.append(line)
             continue
 
-        assertions.append(assertion)
+        if isinstance(directive, Precondition):
+            preconditions.append(directive)
+        else:
+            assertions.append(directive)
         cleaned_lines.append(body[:comment_start].rstrip() + newline)
 
-    return "".join(cleaned_lines), assertions
+    return "".join(cleaned_lines), preconditions, assertions
 
 
 def check_assertions(dut, assertions: list[Assertion]) -> None:
-    """Evaluate assertions against the register file after a program has run."""
+    """Evaluate post-conditions after a program has run."""
     failures: list[str] = []
 
     for assertion in assertions:
-        actual = int(getattr(dut, assertion.target).regs[assertion.index].value)
+        actual = _read_memory(dut, assertion.target, assertion.index)
         if actual != assertion.expected:
             failures.append(
-                f"line {assertion.line}: {assertion.target}[{assertion.index}] "
-                f"expected {assertion.expected}, got {actual}"
+                f"line {assertion.line}: {assertion.target}"
+                f"[{assertion.index}] expected {assertion.expected}, got {actual}"
             )
 
     assert not failures, "Post-condition assertion(s) failed:\n" + "\n".join(failures)
+
+
+def _read_memory(dut, target: str, index: int) -> int:
+    if target == "rf":
+        return int(dut.rf.regs[index].value)
+    return int(dut.dmem.bank[index].value)

@@ -76,6 +76,31 @@ async def test_inline_asm(dut):
     assert dut.rf.regs[1].value == 5
     assert dut.rf.regs[2].value == 12
 
+
+@cocotb.test()
+async def test_dmem_preload(dut):
+    await run_program(
+        dut,
+        """
+        # !dmem[0x10] = 40
+        # !dmem[0x14] = 2
+
+        li   x5, 0x10
+        nop; nop; nop
+        lw   x6, 0(x5)
+        nop; nop; nop
+        lw   x7, 4(x5)
+        nop; nop; nop
+        add  x28, x6, x7
+        jal  x0, 0
+
+        # ?rf[28] == 42
+        # ?dmem[0x10] == 40
+        """,
+        cycles=40,
+    )
+
+
 def discover_tests_under_path(path: Path) -> list[Path]:
     paths = []
     for p in path.glob("*.S"):

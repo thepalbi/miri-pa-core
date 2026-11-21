@@ -80,9 +80,16 @@ async def run_program(
     else:
         program = source
 
+    dut.run.value = 0
+    dut.imem_w_en.value = 0
+    dut.imem_waddr.value = 0
+    dut.imem_wdata.value = 0
+
     Clock(dut.clk, clock_period_ns, unit="ns").start()
-    await reset_core(dut)
+
     await load_imem(dut, program)
+
+    await reset_core(dut)
 
     dut.run.value = 1
     await ClockCycles(dut.clk, cycles)

@@ -1,6 +1,8 @@
 import struct
 from pathlib import Path
 
+from cocotb.triggers import RisingEdge, FallingEdge
+
 
 def program_from_bytes(raw: bytes) -> list[int]:
     """32-bit little-endian RISC-V words (drop trailing partial word)."""
@@ -46,14 +48,10 @@ def program_from_elf_text(path: Path) -> list[int]:
 
 
 async def reset_core(dut):
-    dut.run.value = 0
-    dut.imem_w_en.value = 0
-    dut.imem_waddr.value = 0
-    dut.imem_wdata.value = 0
-    dut.rst.value = 1
-    from cocotb.triggers import FallingEdge
-
+    """Runs two duty cycles, with the rst signal high."""
+    dut.rst.value = 0
     await FallingEdge(dut.clk)
+    dut.rst.value = 1
     await FallingEdge(dut.clk)
     dut.rst.value = 0
 
@@ -62,9 +60,15 @@ async def load_imem(dut, program: list[int]):
     """Same addressing as the hand-written tests (word i at IMEM index i + 1)."""
     from cocotb.triggers import FallingEdge
 
+    dut.imem_rst.value = 0
+    await FallingEdge(dut.clk)
+    dut.imem_rst.value = 1;
+    await FallingEdge(dut.clk)
+    dut.imem_rst.value = 0;
+
     dut.imem_w_en.value = 1
     for i, instr in enumerate(program):
-        dut.imem_waddr.value = i + 1
+        dut.imem_waddr.value = i
         dut.imem_wdata.value = instr
-        await FallingEdge(dut.clk)
+        await RisingEdge(dut.clk)
     dut.imem_w_en.value = 0

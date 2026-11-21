@@ -6,6 +6,7 @@ from pathlib import Path
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
 
+from test_programs.assertions import check_assertions, extract_assertions
 from test_programs.loader import load_imem, program_from_elf_text, reset_core
 
 RTL_TESTS_DIR = Path(__file__).resolve().parent.parent
@@ -14,14 +15,18 @@ DOCKER_IMAGE = "pwn2de4d/riscv-toolchain:latest"
 RISCV_AS = "/opt/riscv32/bin/riscv32-unknown-linux-gnu-as"
 
 
-def assemble(source: str | Path, *, march: str = "rv32im") -> list[int]:
-    """Assemble RISC-V assembly (inline string or .S file) via Docker and return instruction words."""
+def _read_source(source: str | Path) -> str:
     if isinstance(source, Path):
         if not source.is_file():
             raise FileNotFoundError(f"Assembly file not found: {source}")
-        asm_text = source.read_text()
-    else:
-        asm_text = textwrap.dedent(source).lstrip("\n")
+        return source.read_text()
+
+    return textwrap.dedent(source).lstrip("\n")
+
+
+def assemble(source: str | Path, *, march: str = "rv32im") -> list[int]:
+    """Assemble RISC-V assembly (inline string or .S file) via Docker and return instruction words."""
+    asm_text, _ = extract_assertions(_read_source(source))
 
     if not asm_text.endswith("\n"):
         asm_text += "\n"
@@ -68,7 +73,12 @@ async def run_program(
     clock_period_ns: int = 10,
 ) -> list[int]:
     """Assemble (if needed), reset the core, load IMEM, and run for `cycles` clock cycles."""
-    program = assemble(source, march=march) if isinstance(source, (str, Path)) else source
+    assertions = []
+    if isinstance(source, (str, Path)):
+        asm_text, assertions = extract_assertions(_read_source(source))
+        program = assemble(asm_text, march=march)
+    else:
+        program = source
 
     Clock(dut.clk, clock_period_ns, unit="ns").start()
     await reset_core(dut)
@@ -76,4 +86,6 @@ async def run_program(
 
     dut.run.value = 1
     await ClockCycles(dut.clk, cycles)
+
+    check_assertions(dut, assertions)
     return program

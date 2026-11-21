@@ -2,7 +2,7 @@
 
 `include "constants.sv"
 
-module single_cycle_top (
+module core_top (
     input logic clk,
     input logic rst,
     input logic run,

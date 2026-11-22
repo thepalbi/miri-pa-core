@@ -4,7 +4,7 @@ import textwrap
 from pathlib import Path
 
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles
+from cocotb.triggers import ClockCycles, RisingEdge
 
 from test_programs.assertions import (
     Assertion,
@@ -100,12 +100,15 @@ async def run_program(
 
     Clock(dut.clk, clock_period_ns, unit="ns").start()
 
-    await load_imem(dut, program)
+    load_imem(dut, program)
 
     await reset_core(dut)
+
     load_dmem(dut, preconditions)
 
+    await RisingEdge(dut.clk)
     dut.run.value = 1
+
     await ClockCycles(dut.clk, cycles)
 
     check_assertions(dut, assertions)

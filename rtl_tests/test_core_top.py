@@ -22,7 +22,7 @@ async def test_addi(dut):
 
     Clock(dut.clk, 10, unit="ns").start()
     await reset_core(dut)
-    await load_imem(dut, program)
+    load_imem(dut, program)
 
     # Let core run (PC starts on IMEM '0)
     dut.run.value = 1
@@ -45,7 +45,7 @@ async def test_beq_taken(dut):
 
     Clock(dut.clk, 10, unit="ns").start()
     await reset_core(dut)
-    await load_imem(dut, program)
+    load_imem(dut, program)
 
     # Let core run (PC starts on IMEM '0)
     dut.run.value = 1

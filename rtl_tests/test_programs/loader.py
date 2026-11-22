@@ -1,7 +1,7 @@
 import struct
 from pathlib import Path
 
-from cocotb.triggers import RisingEdge, FallingEdge
+from cocotb.triggers import FallingEdge
 
 
 def program_from_bytes(raw: bytes) -> list[int]:
@@ -56,22 +56,20 @@ async def reset_core(dut):
     dut.rst.value = 0
 
 
-async def load_imem(dut, program: list[int]):
-    """Same addressing as the hand-written tests (word i at IMEM index i + 1)."""
-    from cocotb.triggers import FallingEdge
+def load_imem(dut, program: list[int]):
+    """Load the program into IMEM by writing the memory bank directly.
 
-    dut.imem_rst.value = 0
-    await FallingEdge(dut.clk)
-    dut.imem_rst.value = 1;
-    await FallingEdge(dut.clk)
-    dut.imem_rst.value = 0;
-
-    dut.imem_w_en.value = 1
-    for i, instr in enumerate(program):
-        dut.imem_waddr.value = i
-        dut.imem_wdata.value = instr
-        await RisingEdge(dut.clk)
+    Like ``load_dmem``, this bypasses the write port so the loader does not
+    show up as extra activity in the waveforms. The write port is held
+    disabled so the running core cannot overwrite the loaded program.
+    """
     dut.imem_w_en.value = 0
+    dut.imem_waddr.value = 0
+    dut.imem_wdata.value = 0
+    dut.imem_rst.value = 0
+
+    for i, instr in enumerate(program):
+        dut.imem.bank[i].value = instr
 
 
 def load_dmem(dut, preconditions):

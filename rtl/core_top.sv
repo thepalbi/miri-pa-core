@@ -51,6 +51,8 @@ module core_top (
     logic d_writes_rd;
     logic d_is_store;
     logic d_is_load;
+    logic d_fwd_aluout_aluin_a;
+    logic d_fwd_aluout_aluin_b;
 
     // A-stage signals
     logic [`DATA_WORD_SIZE-1:0] a_aluout;
@@ -147,7 +149,9 @@ module core_top (
         .d_funct7(d_funct7),
         .d_writes_rd(d_writes_rd),
         .d_is_store(d_is_store),
-        .d_is_load(d_is_load)
+        .d_is_load(d_is_load),
+        .d_fwd_aluout_aluin_a(d_fwd_aluout_aluin_a),
+        .d_fwd_aluout_aluin_b(d_fwd_aluout_aluin_b)
     );
 
     a_stage a_stage(
@@ -163,6 +167,8 @@ module core_top (
         .d_is_load(d_is_load),
         .d_writes_rd(d_writes_rd),
         .d_rf_waddr_d(d_rf_waddr_d),
+        .d_fwd_aluout_aluin_a(d_fwd_aluout_aluin_a),
+        .d_fwd_aluout_aluin_b(d_fwd_aluout_aluin_b),
 
         .a_aluout(a_aluout),
         .a_aluin_b(a_aluin_b),

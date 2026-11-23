@@ -15,7 +15,8 @@ module decoder (
     output logic [20:0] offset,
     output logic [6:0] opcode,
     output logic [2:0] funct3,
-    output logic [6:0] funct7
+    output logic [6:0] funct7,
+    output logic aluin_b_is_imm
 );
     localparam int IMM_SIZE = 12;
 
@@ -25,18 +26,24 @@ module decoder (
     assign funct3 = ir[14:12];
     assign funct7 = ir[31:25];
     assign rs1 = ir[19:15];
-    assign rs2 = ir[24:20];
     assign rd = ir[11:7];
 
-    assign writes_rd    = (opcode == `OPCODE_OP_IMM) || (opcode == `OPCODE_OP) || (opcode == `OPCODE_LOAD ) || (opcode == `OPCODE_JAL);
-    assign is_load      = opcode == `OPCODE_LOAD;
-    assign is_store     = opcode == `OPCODE_STORE;
+    assign aluin_b_is_imm   = is_load || is_store || opcode == `OPCODE_OP_IMM;
+    assign writes_rd        =   (opcode == `OPCODE_OP_IMM)
+                                || (opcode == `OPCODE_OP)
+                                || (opcode == `OPCODE_LOAD )
+                                || (opcode == `OPCODE_JAL);
+    assign is_load          = opcode == `OPCODE_LOAD;
+    assign is_store         = opcode == `OPCODE_STORE;
+
+    // Masking rs2 if instruction is I-type
+    assign rs2 = aluin_b_is_imm ? 0 : ir[24:20];
 
     always_comb begin: offset_pick
         offset = 21'b0;
         if (opcode == `OPCODE_JAL)
             // For computing the JAL and BRANCH offset, as our machine limits offsets due
-            // to the 12bit address space (4096 addresses), we keep just the 
+            // to the 12bit address space (4096 addresses), we keep just the
             // lower part of the offset - sign extended.
             offset = {ir[31], ir[19:12], ir[20], ir[30:21], 1'b0};
         else if (opcode == `OPCODE_BRANCH)

@@ -17,6 +17,9 @@ module a_stage(
     input logic [4:0] d_rf_waddr_d,
     input logic d_fwd_aluout_aluin_a,
     input logic d_fwd_aluout_aluin_b,
+    input logic d_fwd_mdmemrdata_aluin_a,
+    input logic d_fwd_mdmemrdata_aluin_b,
+    input logic [`DATA_WORD_SIZE-1:0] m_dmem_rdata,
 
     output reg [`DATA_WORD_SIZE-1:0] a_aluout,
     output reg [`DATA_WORD_SIZE-1:0] a_aluin_b,
@@ -36,8 +39,12 @@ module a_stage(
     logic [4:0] rf_waddr_d;
 
     assign is_store = d_is_store;
-    assign aluin_a = d_fwd_aluout_aluin_a ? a_aluout : d_aluin_a;
-    assign aluin_b = d_fwd_aluout_aluin_b ? a_aluout : d_aluin_b;
+    assign aluin_a =    d_fwd_mdmemrdata_aluin_a ? m_dmem_rdata :
+                        d_fwd_aluout_aluin_a ? a_aluout :
+                        d_aluin_a;
+    assign aluin_b =    d_fwd_mdmemrdata_aluin_b ? m_dmem_rdata :
+                        d_fwd_aluout_aluin_b ? a_aluout :
+                        d_aluin_b;
     assign is_load = d_is_load;
     assign writes_rd = d_writes_rd;
     assign rf_waddr_d = d_rf_waddr_d;

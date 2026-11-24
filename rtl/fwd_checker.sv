@@ -15,8 +15,12 @@ module fwd_checker(
     output logic fwd_mdmemrdata_aluin_a,
     output logic fwd_mdmemrdata_aluin_b
 );
-    assign fwd_aluout_rs1 = d_writes_rd && (rf_r_rs1 == d_rf_waddr_d);
-    assign fwd_aluout_rs2 = d_writes_rd && (rf_r_rs2 == d_rf_waddr_d);
+    assign fwd_aluout_rs1 = d_writes_rd
+                            && (d_rf_waddr_d == 0)
+                            && (rf_r_rs1 == d_rf_waddr_d);
+    assign fwd_aluout_rs2 = d_writes_rd
+                            && (d_rf_waddr_d == 0)
+                            && (rf_r_rs2 == d_rf_waddr_d);
 
     assign fwd_mdmemrdata_aluin_a = a_is_load && (rf_r_rs1 == a_rf_waddr_d);
     assign fwd_mdmemrdata_aluin_b = a_is_load && (rf_r_rs2 == a_rf_waddr_d);

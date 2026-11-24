@@ -6,6 +6,7 @@ module f_stage(
     input logic clk,
     input logic rst,
     input logic run,
+    input logic stall,
 
     // PC write signals
     input logic wen_pc,
@@ -23,6 +24,7 @@ pc pc_mod(
     .clk(clk),
     .rst(rst),
     .run(run),
+    .stall(stall),
     .w_en(wen_pc),
     .addr_in(waddr_pc),
     .out(f_pc)

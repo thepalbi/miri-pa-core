@@ -21,6 +21,7 @@ module decoder (
     localparam int IMM_SIZE = 12;
 
     logic [IMM_SIZE-1:0] imm_12;
+    logic is_i_type;
 
     assign opcode = ir[6:0];
     assign funct3 = ir[14:12];
@@ -37,7 +38,8 @@ module decoder (
     assign is_store         = opcode == `OPCODE_STORE;
 
     // Masking rs2 if instruction is I-type
-    assign rs2 = aluin_b_is_imm ? 0 : ir[24:20];
+    assign is_i_type = (opcode == `OPCODE_OP_IMM) || is_load;
+    assign rs2 = is_i_type ? 0 : ir[24:20];
 
     always_comb begin: offset_pick
         offset = 21'b0;

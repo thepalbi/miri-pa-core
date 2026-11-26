@@ -17,7 +17,12 @@ async def sync_out(dut, expected):
 async def test_combinational_read_path(dut):
     """Combinational out tracks pc_val; pc_val only updates on posedge clk."""
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
+    dut.rst.value = 1
+    dut.run.value = 0
+    dut.stall.value = 0
     await Timer(20, unit="ns")
+    dut.rst.value = 0
+    dut.run.value = 1
 
     dut.w_en.value = 0
     dut.addr_in.value = 0

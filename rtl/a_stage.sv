@@ -17,8 +17,8 @@ module a_stage(
     input logic d_is_load,
     input logic d_writes_rd,
     input logic [4:0] d_rf_waddr_d,
-    input logic d_fwd_aluout_aluin_a,
-    input logic d_fwd_aluout_aluin_b,
+    input logic d_fwd_aluout_rs1,
+    input logic d_fwd_aluout_rs2,
     input logic d_fwd_rfwdata_rs1,
     input logic d_fwd_rfwdata_rs2,
     input logic [`DATA_WORD_SIZE-1:0] rf_wdata,
@@ -45,10 +45,10 @@ module a_stage(
     assign is_store = d_is_store;
 
     //aluin MUX for forwarding BEFORE selecting reg or imm
-    assign rs1_data = d_fwd_aluout_aluin_a ? a_aluout :
+    assign rs1_data = d_fwd_aluout_rs1 ? a_aluout :
                       d_fwd_rfwdata_rs1 ? rf_wdata :
                       d_rs1_data;
-    assign rs2_data = d_fwd_aluout_aluin_b ? a_aluout :
+    assign rs2_data = d_fwd_aluout_rs2 ? a_aluout :
                       d_fwd_rfwdata_rs2 ? rf_wdata :
                       d_rs2_data;
 

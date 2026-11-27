@@ -68,6 +68,10 @@ def load_imem(dut, program: list[int]):
     dut.imem_wdata.value = 0
     dut.imem_rst.value = 0
 
+    # Clear leftovers from previously loaded programs
+    for i in range(len(dut.imem.bank)):
+        dut.imem.bank[i].value = 0
+
     for i, instr in enumerate(program):
         dut.imem.bank[i].value = instr
 

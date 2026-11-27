@@ -17,6 +17,7 @@ module core_top (
     // General control signals
     logic [`DATA_ADDR_SIZE-1:0] pc;
     logic [`DATA_WORD_SIZE-1:0] ir;
+    logic stall;
 
     // Register file signals
     // read
@@ -41,8 +42,11 @@ module core_top (
 
     // D-stage signals
     logic [4:0] d_rf_waddr_d;
-    logic [`DATA_WORD_SIZE-1:0] d_aluin_a;
-    logic [`DATA_WORD_SIZE-1:0] d_aluin_b;
+    logic [`DATA_WORD_SIZE-1:0] d_rs1_data;
+    logic [`DATA_WORD_SIZE-1:0] d_rs2_data;
+    logic d_aluin_b_is_imm;
+    logic [`DATA_WORD_SIZE-1:0] d_imm;
+
     logic d_pc_wen;
     logic [`DATA_ADDR_SIZE-1:0] d_branch_target;
     logic [6:0] d_opcode;
@@ -58,7 +62,7 @@ module core_top (
 
     // A-stage signals
     logic [`DATA_WORD_SIZE-1:0] a_aluout;
-    logic [`DATA_WORD_SIZE-1:0] a_aluin_b;
+    logic [`DATA_WORD_SIZE-1:0] a_rs2_data;
     logic a_is_store;
     logic a_is_load;
     logic a_writes_rd;
@@ -119,6 +123,7 @@ module core_top (
         .clk(clk),
         .rst(rst),
         .run(run),
+        .stall(stall),
         .wen_pc(d_pc_wen),
         .waddr_pc(d_branch_target),
         .imem_rdata(imem_rdata),
@@ -145,8 +150,10 @@ module core_top (
         .rf_rdata_b(rf_rdata_b),
 
         .d_rf_waddr_d(d_rf_waddr_d),
-        .d_aluin_a(d_aluin_a),
-        .d_aluin_b(d_aluin_b),
+        .d_rs1_data(d_rs1_data),
+        .d_rs2_data(d_rs2_data),
+        .d_aluin_b_is_imm(d_aluin_b_is_imm),
+        .d_imm(d_imm),
         .d_pc_wen(d_pc_wen),
         .d_branch_target(d_branch_target),
         .d_opcode(d_opcode),
@@ -165,8 +172,10 @@ module core_top (
         .clk(clk),
         .rst(rst),
 
-        .d_aluin_a(d_aluin_a),
-        .d_aluin_b(d_aluin_b),
+        .d_rs1_data(d_rs1_data),
+        .d_rs2_data(d_rs2_data),
+        .d_aluin_b_is_imm(d_aluin_b_is_imm),
+        .d_imm(d_imm),
         .d_opcode(d_opcode),
         .d_funct3(d_funct3),
         .d_funct7(d_funct7),
@@ -181,7 +190,7 @@ module core_top (
         .m_dmem_rdata(m_dmem_rdata),
 
         .a_aluout(a_aluout),
-        .a_aluin_b(a_aluin_b),
+        .a_rs2_data(a_rs2_data),
         .a_btaken(a_btaken),
         .a_is_store(a_is_store),
         .a_is_load(a_is_load),
@@ -196,7 +205,7 @@ module core_top (
 
     	.a_is_store (a_is_store),
     	.a_aluout   (a_aluout),
-    	.a_aluin_b  (a_aluin_b),
+    	.a_rs2_data  (a_rs2_data),
         .a_is_load(a_is_load),
         .a_writes_rd(a_writes_rd),
         .a_rf_waddr_d(a_rf_waddr_d),

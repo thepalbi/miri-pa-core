@@ -6,8 +6,10 @@ module a_stage(
     input logic clk,
     input logic rst,
 
-    input logic [`DATA_WORD_SIZE-1:0] d_aluin_a,
-    input logic [`DATA_WORD_SIZE-1:0] d_aluin_b,
+    input logic [`DATA_WORD_SIZE-1:0] d_rs1_data,
+    input logic [`DATA_WORD_SIZE-1:0] d_rs2_data,
+    input logic d_aluin_b_is_imm,
+    input logic [`DATA_WORD_SIZE-1:0] d_imm,
     input logic [6:0] d_opcode,
     input logic [2:0] d_funct3,
     input logic [6:0] d_funct7,
@@ -22,7 +24,7 @@ module a_stage(
     input logic [`DATA_WORD_SIZE-1:0] m_dmem_rdata,
 
     output reg [`DATA_WORD_SIZE-1:0] a_aluout,
-    output reg [`DATA_WORD_SIZE-1:0] a_aluin_b,
+    output reg [`DATA_WORD_SIZE-1:0] a_rs2_data,
     output reg a_btaken,
     output reg a_is_store,
     output reg a_is_load,
@@ -32,6 +34,8 @@ module a_stage(
     logic [`DATA_WORD_SIZE-1:0] aluout;
     logic [`DATA_WORD_SIZE-1:0] aluin_a;
     logic [`DATA_WORD_SIZE-1:0] aluin_b;
+    logic [`DATA_WORD_SIZE-1:0] rs1_data;
+    logic [`DATA_WORD_SIZE-1:0] rs2_data;
     logic btaken;
     logic is_store;
     logic is_load;
@@ -39,12 +43,19 @@ module a_stage(
     logic [4:0] rf_waddr_d;
 
     assign is_store = d_is_store;
-    assign aluin_a =    d_fwd_mdmemrdata_aluin_a ? m_dmem_rdata :
-                        d_fwd_aluout_aluin_a ? a_aluout :
-                        d_aluin_a;
-    assign aluin_b =    d_fwd_mdmemrdata_aluin_b ? m_dmem_rdata :
-                        d_fwd_aluout_aluin_b ? a_aluout :
-                        d_aluin_b;
+
+    //aluin MUX for forwarding BEFORE selecting reg or imm
+    assign rs1_data = d_fwd_aluout_aluin_a ? a_aluout :
+                      d_fwd_mdmemrdata_aluin_a ? m_dmem_rdata :
+                      d_rs1_data;
+    assign rs2_data = d_fwd_aluout_aluin_b ? a_aluout :
+                      d_fwd_mdmemrdata_aluin_b ? m_dmem_rdata :
+                      d_rs2_data;
+
+    //aluin MUX for reg or imm
+    assign aluin_a = rs1_data;
+    assign aluin_b = d_aluin_b_is_imm ? d_imm : rs2_data;
+
     assign is_load = d_is_load;
     assign writes_rd = d_writes_rd;
     assign rf_waddr_d = d_rf_waddr_d;
@@ -62,7 +73,7 @@ module a_stage(
     always_ff @(posedge clk or posedge rst) begin
         if (rst) begin
             a_aluout        <=0;
-            a_aluin_b       <=0;
+            a_rs2_data      <=0;
             a_btaken        <=0;
             a_is_store      <=0;
             a_is_load       <=0;
@@ -70,7 +81,7 @@ module a_stage(
             a_rf_waddr_d    <=0;
         end else begin
             a_aluout        <=aluout;
-            a_aluin_b       <=aluin_b;
+            a_rs2_data      <=rs2_data;
             a_btaken        <=btaken;
             a_is_store      <=is_store;
             a_is_load       <=is_load;

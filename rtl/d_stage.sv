@@ -22,8 +22,10 @@ module d_stage(
 
     // stage state
     output reg [4:0] d_rf_waddr_d,
-    output reg [`DATA_WORD_SIZE-1:0] d_aluin_a,
-    output reg [`DATA_WORD_SIZE-1:0] d_aluin_b,
+    output reg [`DATA_WORD_SIZE-1:0] d_rs1_data,
+    output reg [`DATA_WORD_SIZE-1:0] d_rs2_data,
+    output reg d_aluin_b_is_imm,
+    output reg [`DATA_WORD_SIZE-1:0] d_imm,
     output reg d_pc_wen,
     output reg [`DATA_ADDR_SIZE-1:0] d_branch_target,
 
@@ -49,8 +51,8 @@ logic [20:0] offset;
 logic [4:0] rs1;
 logic [4:0] rs2;
 logic [4:0] rf_waddr_d;
-logic [`DATA_WORD_SIZE-1:0] aluin_a;
-logic [`DATA_WORD_SIZE-1:0] aluin_b;
+logic [`DATA_WORD_SIZE-1:0] rs1_data;
+logic [`DATA_WORD_SIZE-1:0] rs2_data;
 logic pc_wen;
 logic [`DATA_ADDR_SIZE-1:0] branch_target;
 logic [6:0] opcode;
@@ -66,8 +68,8 @@ logic fwd_mdmemrdata_aluin_b;
 logic aluin_b_is_imm;
 
 assign offset_eff = offset[`DATA_ADDR_SIZE-1:0];
-assign aluin_a = rf_rdata_a;
-assign aluin_b = aluin_b_is_imm ? imm : rf_rdata_b;
+assign rs1_data = rf_rdata_a;
+assign rs2_data = rf_rdata_b;
 assign rf_raddr_a = rs1;
 assign rf_raddr_b = rs2;
 
@@ -116,8 +118,10 @@ fwd_checker fwd_checker (
 always_ff @(posedge clk or posedge rst) begin
     if (rst) begin
         d_rf_waddr_d            <=0;
-        d_aluin_a               <=0;
-        d_aluin_b               <=0;
+        d_rs1_data              <=0;
+        d_rs2_data              <=0;
+        d_aluin_b_is_imm        <=0;
+        d_imm                   <=0;
         d_pc_wen                <=0;
         d_branch_target         <=0;
         d_opcode                <=0;
@@ -132,8 +136,10 @@ always_ff @(posedge clk or posedge rst) begin
         d_fwd_mdmemrdata_aluin_b<=0;
     end else begin
         d_rf_waddr_d            <=rf_waddr_d;
-        d_aluin_a               <=aluin_a;
-        d_aluin_b               <=aluin_b;
+        d_rs1_data              <=rs1_data;
+        d_rs2_data              <=rs2_data;
+        d_aluin_b_is_imm        <=aluin_b_is_imm;
+        d_imm                   <=imm;
         d_pc_wen                <=pc_wen;
         d_branch_target         <=branch_target;
         d_opcode                <=opcode;

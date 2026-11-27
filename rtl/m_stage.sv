@@ -9,7 +9,7 @@ module m_stage(
 
     input logic a_is_store,
     input logic [`DATA_WORD_SIZE-1:0] a_aluout,
-    input logic [`DATA_WORD_SIZE-1:0] a_aluin_b,
+    input logic [`DATA_WORD_SIZE-1:0] a_rs2_data,
     input logic a_is_load,
     input logic a_writes_rd,
     input logic [4:0] a_rf_waddr_d,
@@ -30,7 +30,7 @@ module m_stage(
 
     assign dmem_rwaddr = a_aluout[`DATA_ADDR_SIZE-1:0];
     assign dmem_wen = run & a_is_store;
-    assign dmem_wdata = a_aluin_b;
+    assign dmem_wdata = a_rs2_data;
 
     always_ff @(posedge clk or posedge rst) begin
         if (rst) begin

@@ -57,8 +57,8 @@ module core_top (
     logic d_is_load;
     logic d_fwd_aluout_aluin_a;
     logic d_fwd_aluout_aluin_b;
-    logic d_fwd_mdmemrdata_aluin_a;
-    logic d_fwd_mdmemrdata_aluin_b;
+    logic d_fwd_rfwdata_rs1;
+    logic d_fwd_rfwdata_rs2;
 
     // A-stage signals
     logic [`DATA_WORD_SIZE-1:0] a_aluout;
@@ -140,6 +140,7 @@ module core_top (
         .f_ir(ir),
 
         .a_is_load(a_is_load),
+        .a_writes_rd(a_writes_rd),
         .a_rf_waddr_d(a_rf_waddr_d),
 
         .branch_taken(a_btaken),
@@ -164,8 +165,8 @@ module core_top (
         .d_is_load(d_is_load),
         .d_fwd_aluout_aluin_a(d_fwd_aluout_aluin_a),
         .d_fwd_aluout_aluin_b(d_fwd_aluout_aluin_b),
-        .d_fwd_mdmemrdata_aluin_a(d_fwd_mdmemrdata_aluin_a),
-        .d_fwd_mdmemrdata_aluin_b(d_fwd_mdmemrdata_aluin_b)
+        .d_fwd_rfwdata_rs1(d_fwd_rfwdata_rs1),
+        .d_fwd_rfwdata_rs2(d_fwd_rfwdata_rs2)
     );
 
     a_stage a_stage(
@@ -185,9 +186,9 @@ module core_top (
         .d_rf_waddr_d(d_rf_waddr_d),
         .d_fwd_aluout_aluin_a(d_fwd_aluout_aluin_a),
         .d_fwd_aluout_aluin_b(d_fwd_aluout_aluin_b),
-        .d_fwd_mdmemrdata_aluin_a(d_fwd_mdmemrdata_aluin_a),
-        .d_fwd_mdmemrdata_aluin_b(d_fwd_mdmemrdata_aluin_b),
-        .m_dmem_rdata(m_dmem_rdata),
+        .d_fwd_rfwdata_rs1(d_fwd_rfwdata_rs1),
+        .d_fwd_rfwdata_rs2(d_fwd_rfwdata_rs2),
+        .rf_wdata(rf_wdata),
 
         .a_aluout(a_aluout),
         .a_rs2_data(a_rs2_data),

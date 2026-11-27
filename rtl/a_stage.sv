@@ -19,9 +19,9 @@ module a_stage(
     input logic [4:0] d_rf_waddr_d,
     input logic d_fwd_aluout_aluin_a,
     input logic d_fwd_aluout_aluin_b,
-    input logic d_fwd_mdmemrdata_aluin_a,
-    input logic d_fwd_mdmemrdata_aluin_b,
-    input logic [`DATA_WORD_SIZE-1:0] m_dmem_rdata,
+    input logic d_fwd_rfwdata_rs1,
+    input logic d_fwd_rfwdata_rs2,
+    input logic [`DATA_WORD_SIZE-1:0] rf_wdata,
 
     output reg [`DATA_WORD_SIZE-1:0] a_aluout,
     output reg [`DATA_WORD_SIZE-1:0] a_rs2_data,
@@ -46,10 +46,10 @@ module a_stage(
 
     //aluin MUX for forwarding BEFORE selecting reg or imm
     assign rs1_data = d_fwd_aluout_aluin_a ? a_aluout :
-                      d_fwd_mdmemrdata_aluin_a ? m_dmem_rdata :
+                      d_fwd_rfwdata_rs1 ? rf_wdata :
                       d_rs1_data;
     assign rs2_data = d_fwd_aluout_aluin_b ? a_aluout :
-                      d_fwd_mdmemrdata_aluin_b ? m_dmem_rdata :
+                      d_fwd_rfwdata_rs2 ? rf_wdata :
                       d_rs2_data;
 
     //aluin MUX for reg or imm

@@ -18,6 +18,7 @@ module d_stage(
     input logic [`DATA_WORD_SIZE-1:0] rf_rdata_a,
     input logic [`DATA_WORD_SIZE-1:0] rf_rdata_b,
     input logic a_is_load,
+    input logic a_writes_rd,
     input logic [4:0] a_rf_waddr_d,
 
     // stage state
@@ -39,8 +40,8 @@ module d_stage(
 
     output reg d_fwd_aluout_aluin_a,
     output reg d_fwd_aluout_aluin_b,
-    output reg d_fwd_mdmemrdata_aluin_a,
-    output reg d_fwd_mdmemrdata_aluin_b
+    output reg d_fwd_rfwdata_rs1,
+    output reg d_fwd_rfwdata_rs2
 );
 
 logic [`DATA_WORD_SIZE-1:0] imm;
@@ -63,8 +64,8 @@ logic is_store;
 logic is_load;
 logic fwd_aluout_aluin_a;
 logic fwd_aluout_aluin_b;
-logic fwd_mdmemrdata_aluin_a;
-logic fwd_mdmemrdata_aluin_b;
+logic fwd_rfwdata_rs1;
+logic fwd_rfwdata_rs2;
 logic aluin_b_is_imm;
 
 assign offset_eff = offset[`DATA_ADDR_SIZE-1:0];
@@ -107,12 +108,13 @@ fwd_checker fwd_checker (
 	.d_rf_waddr_d  (d_rf_waddr_d),
 
 	.a_is_load(a_is_load),
+    .a_writes_rd(a_writes_rd),
 	.a_rf_waddr_d(a_rf_waddr_d),
 
 	.fwd_aluout_rs1(fwd_aluout_aluin_a),
 	.fwd_aluout_rs2(fwd_aluout_aluin_b),
-	.fwd_mdmemrdata_aluin_a(fwd_mdmemrdata_aluin_a),
-	.fwd_mdmemrdata_aluin_b(fwd_mdmemrdata_aluin_b)
+	.fwd_rfwdata_rs1(fwd_rfwdata_rs1),
+	.fwd_rfwdata_rs2(fwd_rfwdata_rs2)
 );
 
 always_ff @(posedge clk or posedge rst) begin
@@ -132,8 +134,8 @@ always_ff @(posedge clk or posedge rst) begin
         d_is_load               <=0;
         d_fwd_aluout_aluin_a    <=0;
         d_fwd_aluout_aluin_b    <=0;
-        d_fwd_mdmemrdata_aluin_a<=0;
-        d_fwd_mdmemrdata_aluin_b<=0;
+        d_fwd_rfwdata_rs1       <=0;
+        d_fwd_rfwdata_rs2       <=0;
     end else begin
         d_rf_waddr_d            <=rf_waddr_d;
         d_rs1_data              <=rs1_data;
@@ -150,8 +152,8 @@ always_ff @(posedge clk or posedge rst) begin
         d_is_load               <=is_load;
         d_fwd_aluout_aluin_a    <=fwd_aluout_aluin_a;
         d_fwd_aluout_aluin_b    <=fwd_aluout_aluin_b;
-        d_fwd_mdmemrdata_aluin_a<=fwd_mdmemrdata_aluin_a;
-        d_fwd_mdmemrdata_aluin_b<=fwd_mdmemrdata_aluin_b;
+        d_fwd_rfwdata_rs1       <=fwd_rfwdata_rs1;
+        d_fwd_rfwdata_rs2       <=fwd_rfwdata_rs2;
     end
 end
 

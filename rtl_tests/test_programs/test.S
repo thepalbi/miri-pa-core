@@ -7,3 +7,6 @@ loop:
     jal x0, loop    # continue
 end:
     jal x0, end
+
+// ?rf[1] == 0
+// ?rf[2] == 20

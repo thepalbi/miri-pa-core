@@ -72,13 +72,37 @@ TOPMODEL = "memory_bank"       # top-level module
 
 ### Adding a RISC-V assembly test
 
-In tests for `single_cycle_top` (e.g., `test_single_cycle_top.py`), use `run_program` from `test_programs` to assemble RISC-V assembly on the fly via Docker, load IMEM, and run the core. Temporary build artifacts go into `asm_build/` (git-ignored).
+In tests for `core_top` (e.g., `test_core_top.py`), use `run_program` from `test_programs` to assemble RISC-V assembly on the fly via Docker, load IMEM, and run the core. Temporary build artifacts go into `asm_build/` (git-ignored).
 
 Docker must be running, with the toolchain image pulled beforehand:
 
 ```bash
 docker pull pwn2de4d/riscv-toolchain:latest
 ```
+
+Pre- and post-conditions can be embedded directly in assembly comments and are removed before assembly.
+
+A comment whose text starts with `!` is a **pre-condition**, evaluated before the program runs. Data memory can be pre-loaded with `!dmem[<address>] = <value>`:
+
+```asm
+# !dmem[0x10] = 40
+# !dmem[0x14] = 2
+
+    li   x5, 0x10
+    nop; nop; nop
+    lw   x6, 0(x5)   # x6 = 40
+```
+
+A comment whose text starts with `?` is a **post-condition** (assertion), checked after the program runs. Both the register file and data memory can be checked:
+
+```asm
+# ?rf[6] == 40
+# ?dmem[0x10] == 40
+```
+
+`rf[i]` is register-file index `i`, and `dmem[a]` is data-memory word address `a` (the same value used by loads/stores). All integers may be decimal or hexadecimal. `run_program` applies every pre-condition before starting and checks every post-condition afterwards, reporting all failures. Both `#` and `//` comment styles are accepted.
+
+Pre-conditions are written after the core is reset, because the data-memory bank clears itself on reset. Note that they write directly to the memory bank; register values cannot be pre-loaded.
 
 **From a `.S` file** (pass a `Path`):
 
@@ -92,8 +116,6 @@ PROGRAMS = Path(__file__).resolve().parent / "test_programs"
 @cocotb.test()
 async def test_loop_from_s_file(dut):
     await run_program(dut, PROGRAMS / "test.S", cycles=80)
-    assert dut.rf.regs[1].value == 0
-    assert dut.rf.regs[2].value == 20
 ```
 
 **From an inline assembly string** (pass a `str`):
@@ -106,11 +128,12 @@ async def test_inline_asm(dut):
         """
         addi x1, x0, 5
         addi x2, x1, 7
+
+        # ?rf[1] == 5
+        # ?rf[2] == 12
         """,
         cycles=10,
     )
-    assert dut.rf.regs[1].value == 5
-    assert dut.rf.regs[2].value == 12
 ```
 
 You can also pass `march="rv32im"` (default) or `clock_period_ns=10` to `run_program`, or call `assemble(source)` directly to get the `list[int]` instruction words.

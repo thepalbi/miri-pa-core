@@ -2,11 +2,12 @@
 
 `include "constants.sv"
 
-module single_cycle_top (
+module core_top (
     input logic clk,
     input logic rst,
     input logic run,
     input logic imem_w_en,
+    input logic imem_rst,
     input logic [`DATA_ADDR_SIZE-1:0] imem_waddr,
     input logic [`DATA_WORD_SIZE-1:0] imem_wdata
 );
@@ -16,6 +17,7 @@ module single_cycle_top (
     // General control signals
     logic [`DATA_ADDR_SIZE-1:0] pc;
     logic [`DATA_WORD_SIZE-1:0] ir;
+    logic stall;
 
     // Register file signals
     // read
@@ -40,8 +42,11 @@ module single_cycle_top (
 
     // D-stage signals
     logic [4:0] d_rf_waddr_d;
-    logic [`DATA_WORD_SIZE-1:0] d_aluin_a;
-    logic [`DATA_WORD_SIZE-1:0] d_aluin_b;
+    logic [`DATA_WORD_SIZE-1:0] d_rs1_data;
+    logic [`DATA_WORD_SIZE-1:0] d_rs2_data;
+    logic d_aluin_b_is_imm;
+    logic [`DATA_WORD_SIZE-1:0] d_imm;
+
     logic d_pc_wen;
     logic [`DATA_ADDR_SIZE-1:0] d_branch_target;
     logic [6:0] d_opcode;
@@ -50,10 +55,14 @@ module single_cycle_top (
     logic d_writes_rd;
     logic d_is_store;
     logic d_is_load;
+    logic d_fwd_aluout_rs1;
+    logic d_fwd_aluout_rs2;
+    logic d_fwd_rfwdata_rs1;
+    logic d_fwd_rfwdata_rs2;
 
     // A-stage signals
     logic [`DATA_WORD_SIZE-1:0] a_aluout;
-    logic [`DATA_WORD_SIZE-1:0] a_aluin_b;
+    logic [`DATA_WORD_SIZE-1:0] a_rs2_data;
     logic a_is_store;
     logic a_is_load;
     logic a_writes_rd;
@@ -76,7 +85,7 @@ module single_cycle_top (
 
     memory_bank imem(
         .clk(clk),
-        .rst(rst),
+        .rst(imem_rst),
         .wen(imem_w_en),
         .waddr(imem_waddr),
         .wdata(imem_wdata),
@@ -113,6 +122,8 @@ module single_cycle_top (
     f_stage f_stage(
         .clk(clk),
         .rst(rst),
+        .run(run),
+        .stall(stall),
         .wen_pc(d_pc_wen),
         .waddr_pc(d_branch_target),
         .imem_rdata(imem_rdata),
@@ -128,31 +139,48 @@ module single_cycle_top (
         .f_pc(pc),
         .f_ir(ir),
 
+        .a_is_load(a_is_load),
+        .a_writes_rd(a_writes_rd),
+        .a_rf_waddr_d(a_rf_waddr_d),
+
+        .m_writes_rd(m_writes_rd),
+        .m_rf_waddr_d(m_rf_waddr_d),
+        .rf_wdata(rf_wdata),
+
+        .branch_taken(a_btaken),
+
         .rf_raddr_a(rf_raddr_a),
         .rf_raddr_b(rf_raddr_b),
         .rf_rdata_a(rf_rdata_a),
         .rf_rdata_b(rf_rdata_b),
-        .rf_waddr_d(d_rf_waddr_d),
 
-        .aluin_a(d_aluin_a),
-        .aluin_b(d_aluin_b),
-        .pc_wen(d_pc_wen),
-        .branch_target(d_branch_target),
-        .opcode(d_opcode),
-        .funct3(d_funct3),
-        .funct7(d_funct7),
-        .writes_rd(d_writes_rd),
-        .is_store(d_is_store),
-        .is_load(d_is_load),
-        .branch_taken(a_btaken)
+        .d_rf_waddr_d(d_rf_waddr_d),
+        .d_rs1_data(d_rs1_data),
+        .d_rs2_data(d_rs2_data),
+        .d_aluin_b_is_imm(d_aluin_b_is_imm),
+        .d_imm(d_imm),
+        .d_pc_wen(d_pc_wen),
+        .d_branch_target(d_branch_target),
+        .d_opcode(d_opcode),
+        .d_funct3(d_funct3),
+        .d_funct7(d_funct7),
+        .d_writes_rd(d_writes_rd),
+        .d_is_store(d_is_store),
+        .d_is_load(d_is_load),
+        .d_fwd_aluout_rs1(d_fwd_aluout_rs1),
+        .d_fwd_aluout_rs2(d_fwd_aluout_rs2),
+        .d_fwd_rfwdata_rs1(d_fwd_rfwdata_rs1),
+        .d_fwd_rfwdata_rs2(d_fwd_rfwdata_rs2)
     );
 
     a_stage a_stage(
         .clk(clk),
         .rst(rst),
 
-        .d_aluin_a(d_aluin_a),
-        .d_aluin_b(d_aluin_b),
+        .d_rs1_data(d_rs1_data),
+        .d_rs2_data(d_rs2_data),
+        .d_aluin_b_is_imm(d_aluin_b_is_imm),
+        .d_imm(d_imm),
         .d_opcode(d_opcode),
         .d_funct3(d_funct3),
         .d_funct7(d_funct7),
@@ -160,14 +188,19 @@ module single_cycle_top (
         .d_is_load(d_is_load),
         .d_writes_rd(d_writes_rd),
         .d_rf_waddr_d(d_rf_waddr_d),
+        .d_fwd_aluout_rs1(d_fwd_aluout_rs1),
+        .d_fwd_aluout_rs2(d_fwd_aluout_rs2),
+        .d_fwd_rfwdata_rs1(d_fwd_rfwdata_rs1),
+        .d_fwd_rfwdata_rs2(d_fwd_rfwdata_rs2),
+        .rf_wdata(rf_wdata),
 
-        .aluout(a_aluout),
-        .aluin_b(a_aluin_b),
-        .btaken(a_btaken),
-        .is_store(a_is_store),
-        .is_load(a_is_load),
-        .writes_rd(a_writes_rd),
-        .rf_waddr_d(a_rf_waddr_d)
+        .a_aluout(a_aluout),
+        .a_rs2_data(a_rs2_data),
+        .a_btaken(a_btaken),
+        .a_is_store(a_is_store),
+        .a_is_load(a_is_load),
+        .a_writes_rd(a_writes_rd),
+        .a_rf_waddr_d(a_rf_waddr_d)
     );
 
     m_stage m_stage (
@@ -177,7 +210,7 @@ module single_cycle_top (
 
     	.a_is_store (a_is_store),
     	.a_aluout   (a_aluout),
-    	.a_aluin_b  (a_aluin_b),
+    	.a_rs2_data  (a_rs2_data),
         .a_is_load(a_is_load),
         .a_writes_rd(a_writes_rd),
         .a_rf_waddr_d(a_rf_waddr_d),
@@ -186,12 +219,12 @@ module single_cycle_top (
     	.dmem_wen   (dmem_wen),
     	.dmem_rwaddr(dmem_rwaddr),
     	.dmem_wdata (dmem_wdata),
-        .dmem_rdata(m_dmem_rdata),
 
-        .is_load(m_is_load),
-        .writes_rd(m_writes_rd),
-        .aluout(m_aluout),
-        .rf_waddr_d(m_rf_waddr_d)
+        .m_dmem_rdata(m_dmem_rdata),
+        .m_is_load(m_is_load),
+        .m_writes_rd(m_writes_rd),
+        .m_aluout(m_aluout),
+        .m_rf_waddr_d(m_rf_waddr_d)
     );
 
     wb_stage wb_stage (

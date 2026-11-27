@@ -4,9 +4,20 @@ import textwrap
 from pathlib import Path
 
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles
+from cocotb.triggers import ClockCycles, RisingEdge
 
-from test_programs.loader import load_imem, program_from_elf_text, reset_core
+from test_programs.assertions import (
+    Assertion,
+    Precondition,
+    check_assertions,
+    extract_directives,
+)
+from test_programs.loader import (
+    load_dmem,
+    load_imem,
+    program_from_elf_text,
+    reset_core,
+)
 
 RTL_TESTS_DIR = Path(__file__).resolve().parent.parent
 ASM_BUILD_DIR = RTL_TESTS_DIR / "asm_build"
@@ -14,14 +25,18 @@ DOCKER_IMAGE = "pwn2de4d/riscv-toolchain:latest"
 RISCV_AS = "/opt/riscv32/bin/riscv32-unknown-linux-gnu-as"
 
 
-def assemble(source: str | Path, *, march: str = "rv32im") -> list[int]:
-    """Assemble RISC-V assembly (inline string or .S file) via Docker and return instruction words."""
+def _read_source(source: str | Path) -> str:
     if isinstance(source, Path):
         if not source.is_file():
             raise FileNotFoundError(f"Assembly file not found: {source}")
-        asm_text = source.read_text()
-    else:
-        asm_text = textwrap.dedent(source).lstrip("\n")
+        return source.read_text()
+
+    return textwrap.dedent(source).lstrip("\n")
+
+
+def assemble(source: str | Path, *, march: str = "rv32im") -> list[int]:
+    """Assemble RISC-V assembly (inline string or .S file) via Docker and return instruction words."""
+    asm_text, _, _ = extract_directives(_read_source(source))
 
     if not asm_text.endswith("\n"):
         asm_text += "\n"
@@ -68,12 +83,33 @@ async def run_program(
     clock_period_ns: int = 10,
 ) -> list[int]:
     """Assemble (if needed), reset the core, load IMEM, and run for `cycles` clock cycles."""
-    program = assemble(source, march=march) if isinstance(source, (str, Path)) else source
+    preconditions: list[Precondition] = []
+    assertions: list[Assertion] = []
+    if isinstance(source, (str, Path)):
+        asm_text, preconditions, assertions = extract_directives(
+            _read_source(source)
+        )
+        program = assemble(asm_text, march=march)
+    else:
+        program = source
+
+    dut.run.value = 0
+    dut.imem_w_en.value = 0
+    dut.imem_waddr.value = 0
+    dut.imem_wdata.value = 0
 
     Clock(dut.clk, clock_period_ns, unit="ns").start()
-    await reset_core(dut)
-    await load_imem(dut, program)
 
+    load_imem(dut, program)
+
+    await reset_core(dut)
+
+    load_dmem(dut, preconditions)
+
+    await RisingEdge(dut.clk)
     dut.run.value = 1
+
     await ClockCycles(dut.clk, cycles)
+
+    check_assertions(dut, assertions)
     return program

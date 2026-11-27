@@ -17,6 +17,6 @@ module branch_tgt_gen (
     // TODO: Review this !
     assign word_offset = $signed(offset) / 4;  // bytes -> words
     assign branch_tgt = run ? pc + word_offset : '0;
-    assign pc_wen = !run | branch_taken | (opcode == `OPCODE_JAL);
+    assign pc_wen = run & ( branch_taken | (opcode == `OPCODE_JAL) );
 
 endmodule

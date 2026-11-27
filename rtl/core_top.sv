@@ -143,6 +143,10 @@ module core_top (
         .a_writes_rd(a_writes_rd),
         .a_rf_waddr_d(a_rf_waddr_d),
 
+        .m_writes_rd(m_writes_rd),
+        .m_rf_waddr_d(m_rf_waddr_d),
+        .rf_wdata(rf_wdata),
+
         .branch_taken(a_btaken),
 
         .rf_raddr_a(rf_raddr_a),

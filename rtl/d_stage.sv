@@ -20,6 +20,9 @@ module d_stage(
     input logic a_is_load,
     input logic a_writes_rd,
     input logic [4:0] a_rf_waddr_d,
+    input logic m_writes_rd,
+    input logic [4:0] m_rf_waddr_d,
+    input logic [`DATA_WORD_SIZE-1:0] rf_wdata,
 
     // stage state
     output reg [4:0] d_rf_waddr_d,
@@ -66,11 +69,13 @@ logic fwd_aluout_rs1;
 logic fwd_aluout_rs2;
 logic fwd_rfwdata_rs1;
 logic fwd_rfwdata_rs2;
+logic fwd_rfwdata_rfrdataa;
+logic fwd_rfwdata_rfrdatab;
 logic aluin_b_is_imm;
 
 assign offset_eff = offset[`DATA_ADDR_SIZE-1:0];
-assign rs1_data = rf_rdata_a;
-assign rs2_data = rf_rdata_b;
+assign rs1_data = fwd_rfwdata_rfrdataa ? rf_wdata : rf_rdata_a;
+assign rs2_data = fwd_rfwdata_rfrdatab ? rf_wdata : rf_rdata_b;
 assign rf_raddr_a = rs1;
 assign rf_raddr_b = rs2;
 
@@ -111,10 +116,15 @@ fwd_checker fwd_checker (
     .a_writes_rd(a_writes_rd),
 	.a_rf_waddr_d(a_rf_waddr_d),
 
+    .m_writes_rd(m_writes_rd),
+	.m_rf_waddr_d(m_rf_waddr_d),
+
 	.fwd_aluout_rs1(fwd_aluout_rs1),
 	.fwd_aluout_rs2(fwd_aluout_rs2),
 	.fwd_rfwdata_rs1(fwd_rfwdata_rs1),
-	.fwd_rfwdata_rs2(fwd_rfwdata_rs2)
+	.fwd_rfwdata_rs2(fwd_rfwdata_rs2),
+	.fwd_rfwdata_rfrdataa(fwd_rfwdata_rfrdataa),
+	.fwd_rfwdata_rfrdatab(fwd_rfwdata_rfrdatab)
 );
 
 always_ff @(posedge clk or posedge rst) begin

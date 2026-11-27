@@ -10,12 +10,16 @@ module fwd_checker(
     input logic a_is_load,
     input logic a_writes_rd,
     input logic [4:0] a_rf_waddr_d,
+    input logic m_writes_rd,
+    input logic [4:0] m_rf_waddr_d,
 
     output logic fwd_aluout_rs1,
     output logic fwd_aluout_rs2,
     output logic fwd_rfwdata_rs1,
-    output logic fwd_rfwdata_rs2
-);
+    output logic fwd_rfwdata_rs2,
+    output logic fwd_rfwdata_rfrdataa,
+    output logic fwd_rfwdata_rfrdatab
+    );
     // Distance 1
     assign fwd_aluout_rs1 = d_writes_rd
                             && (d_rf_waddr_d != 0)
@@ -32,5 +36,13 @@ module fwd_checker(
                             && (a_rf_waddr_d != 0)
                             && (rf_r_rs2 == a_rf_waddr_d)
                             && !fwd_aluout_rs2;
+
+    // Distance 3 (rf bypass: read the register being written)
+    assign fwd_rfwdata_rfrdataa = m_writes_rd
+                            && (m_rf_waddr_d != 0)
+                            && (rf_r_rs1 == m_rf_waddr_d);
+    assign fwd_rfwdata_rfrdatab = m_writes_rd
+                            && (m_rf_waddr_d != 0)
+                            && (rf_r_rs2 == m_rf_waddr_d);
 
 endmodule

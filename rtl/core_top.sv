@@ -59,6 +59,7 @@ module core_top (
     logic d_fwd_aluout_rs2;
     logic d_fwd_rfwdata_rs1;
     logic d_fwd_rfwdata_rs2;
+    logic d_hzd_stall_f;
 
     // A-stage signals
     logic [`DATA_WORD_SIZE-1:0] a_aluout;
@@ -123,7 +124,7 @@ module core_top (
         .clk(clk),
         .rst(rst),
         .run(run),
-        .stall(stall),
+        .stall(d_hzd_stall_f),
         .wen_pc(d_pc_wen),
         .waddr_pc(d_branch_target),
         .imem_rdata(imem_rdata),
@@ -170,7 +171,8 @@ module core_top (
         .d_fwd_aluout_rs1(d_fwd_aluout_rs1),
         .d_fwd_aluout_rs2(d_fwd_aluout_rs2),
         .d_fwd_rfwdata_rs1(d_fwd_rfwdata_rs1),
-        .d_fwd_rfwdata_rs2(d_fwd_rfwdata_rs2)
+        .d_fwd_rfwdata_rs2(d_fwd_rfwdata_rs2),
+        .d_hzd_stall_f(d_hzd_stall_f)
     );
 
     a_stage a_stage(

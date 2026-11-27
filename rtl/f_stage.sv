@@ -33,7 +33,7 @@ pc pc_mod(
 always_ff @(posedge clk or posedge rst) begin
     if (rst) begin
         f_ir <= 0;
-    end else if (run) begin
+    end else if (run && !stall) begin
         f_ir <= imem_rdata;
     end
 end

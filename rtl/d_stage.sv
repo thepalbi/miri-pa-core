@@ -44,7 +44,9 @@ module d_stage(
     output reg d_fwd_aluout_rs1,
     output reg d_fwd_aluout_rs2,
     output reg d_fwd_rfwdata_rs1,
-    output reg d_fwd_rfwdata_rs2
+    output reg d_fwd_rfwdata_rs2,
+
+    output logic d_hzd_stall_f
 );
 
 logic [`DATA_WORD_SIZE-1:0] imm;
@@ -72,12 +74,25 @@ logic fwd_rfwdata_rs2;
 logic fwd_rfwdata_rfrdataa;
 logic fwd_rfwdata_rfrdatab;
 logic aluin_b_is_imm;
+logic hzd_stall_f;
+logic hzd_nop_d;
+logic dec_writes_rd;
+logic dec_is_store;
+logic dec_is_load;
+logic [6:0] dec_opcode;
 
 assign offset_eff = offset[`DATA_ADDR_SIZE-1:0];
 assign rs1_data = fwd_rfwdata_rfrdataa ? rf_wdata : rf_rdata_a;
 assign rs2_data = fwd_rfwdata_rfrdatab ? rf_wdata : rf_rdata_b;
 assign rf_raddr_a = rs1;
 assign rf_raddr_b = rs2;
+assign d_hzd_stall_f = hzd_stall_f;
+
+// MUX D/A stage registers
+assign writes_rd = hzd_nop_d ? 0 : dec_writes_rd;
+assign is_store  = hzd_nop_d ? 0 : dec_is_store;
+assign is_load   = hzd_nop_d ? 0 : dec_is_load;
+assign opcode    = hzd_nop_d ? 0 : dec_opcode;
 
 decoder decoder (
 	.ir             (f_ir),
@@ -85,13 +100,13 @@ decoder decoder (
 	.rs2            (rs2),
 	.rd             (rf_waddr_d),
 
-	.writes_rd      (writes_rd),
-	.is_store       (is_store),
-	.is_load        (is_load),
+	.writes_rd      (dec_writes_rd),
+	.is_store       (dec_is_store),
+	.is_load        (dec_is_load),
 	.aluin_b_is_imm (aluin_b_is_imm),
 	.imm            (imm),
 	.offset         (offset),
-	.opcode         (opcode),
+	.opcode         (dec_opcode),
 	.funct3         (funct3),
 	.funct7         (funct7)
 );
@@ -125,6 +140,15 @@ fwd_checker fwd_checker (
 	.fwd_rfwdata_rs2(fwd_rfwdata_rs2),
 	.fwd_rfwdata_rfrdataa(fwd_rfwdata_rfrdataa),
 	.fwd_rfwdata_rfrdatab(fwd_rfwdata_rfrdatab)
+);
+
+hzd_checker hzd_checker (
+	.rf_r_rs1      (rs1),
+	.rf_r_rs2      (rs2),
+	.d_is_load     (d_is_load),
+	.d_rf_waddr_d  (d_rf_waddr_d),
+    .hzd_stall_f   (hzd_stall_f),
+    .hzd_nop_d     (hzd_nop_d)
 );
 
 always_ff @(posedge clk or posedge rst) begin

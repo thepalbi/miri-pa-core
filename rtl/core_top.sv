@@ -59,7 +59,10 @@ module core_top (
     logic d_fwd_aluout_rs2;
     logic d_fwd_rfwdata_rs1;
     logic d_fwd_rfwdata_rs2;
-    logic d_hzd_stall_f;
+
+    // Hazard signals
+    logic hzd_stall_f;
+    logic hzd_nop_d;
 
     // A-stage signals
     logic [`DATA_WORD_SIZE-1:0] a_aluout;
@@ -124,7 +127,7 @@ module core_top (
         .clk(clk),
         .rst(rst),
         .run(run),
-        .stall(d_hzd_stall_f),
+        .stall(hzd_stall_f),
         .wen_pc(d_pc_wen),
         .waddr_pc(d_branch_target),
         .imem_rdata(imem_rdata),
@@ -149,6 +152,7 @@ module core_top (
         .rf_wdata(rf_wdata),
 
         .branch_taken(a_btaken),
+        .hzd_nop_d(hzd_nop_d),
 
         .rf_raddr_a(rf_raddr_a),
         .rf_raddr_b(rf_raddr_b),
@@ -171,8 +175,16 @@ module core_top (
         .d_fwd_aluout_rs1(d_fwd_aluout_rs1),
         .d_fwd_aluout_rs2(d_fwd_aluout_rs2),
         .d_fwd_rfwdata_rs1(d_fwd_rfwdata_rs1),
-        .d_fwd_rfwdata_rs2(d_fwd_rfwdata_rs2),
-        .d_hzd_stall_f(d_hzd_stall_f)
+        .d_fwd_rfwdata_rs2(d_fwd_rfwdata_rs2)
+    );
+
+    hzd_checker hzd_checker (
+        .rf_r_rs1     (rf_raddr_a),
+        .rf_r_rs2     (rf_raddr_b),
+        .d_is_load    (d_is_load),
+        .d_rf_waddr_d (d_rf_waddr_d),
+        .hzd_stall_f  (hzd_stall_f),
+        .hzd_nop_d    (hzd_nop_d)
     );
 
     a_stage a_stage(

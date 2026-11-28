@@ -15,6 +15,7 @@ module a_stage(
     input logic [6:0] d_funct7,
     input logic d_is_store,
     input logic d_is_load,
+    input logic d_is_jal,
     input logic d_writes_rd,
     input logic [4:0] d_rf_waddr_d,
     input logic d_fwd_aluout_rs1,
@@ -31,9 +32,10 @@ module a_stage(
     output reg a_writes_rd,
     output reg [4:0] a_rf_waddr_d,
 
-    // branch result
+    // branch/jal result
     output logic a_btaken,
-    output logic [`DATA_ADDR_SIZE-1:0] a_pc_tgt
+    output logic [`DATA_ADDR_SIZE-1:0] a_pc_tgt,
+    output logic a_is_jal
 );
     logic [`DATA_WORD_SIZE-1:0] aluout;
     logic [`DATA_WORD_SIZE-1:0] aluin_a;
@@ -65,6 +67,9 @@ module a_stage(
     assign rf_waddr_d = d_rf_waddr_d;
     assign a_btaken = btaken;
     assign a_pc_tgt = d_pc_tgt;
+    assign a_is_jal = d_is_jal;
+
+    // TODO(jal link): jal sets writes_rd but currently rd gets 0.
 
     alu alu(
         .input1(aluin_a),

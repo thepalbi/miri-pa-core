@@ -11,6 +11,7 @@ module decoder (
     output logic writes_rd,
     output logic is_store,
     output logic is_load,
+    output logic is_jal,
     output logic [`DATA_WORD_SIZE-1:0] imm,
     output logic [20:0] offset,
     output logic [6:0] opcode,
@@ -36,6 +37,7 @@ module decoder (
                                 || (opcode == `OPCODE_JAL);
     assign is_load          = opcode == `OPCODE_LOAD;
     assign is_store         = opcode == `OPCODE_STORE;
+    assign is_jal           = opcode == `OPCODE_JAL;
 
     // Masking rs2 if instruction is I-type
     assign is_i_type = (opcode == `OPCODE_OP_IMM) || is_load;

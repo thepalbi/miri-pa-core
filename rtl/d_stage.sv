@@ -39,6 +39,7 @@ module d_stage(
     output reg d_writes_rd,
     output reg d_is_store,
     output reg d_is_load,
+    output reg d_is_jal,
 
     output reg d_fwd_aluout_rs1,
     output reg d_fwd_aluout_rs2,
@@ -63,6 +64,7 @@ logic [6:0] funct7;
 logic writes_rd;
 logic is_store;
 logic is_load;
+logic is_jal;
 logic fwd_aluout_rs1;
 logic fwd_aluout_rs2;
 logic fwd_rfwdata_rs1;
@@ -73,6 +75,7 @@ logic aluin_b_is_imm;
 logic dec_writes_rd;
 logic dec_is_store;
 logic dec_is_load;
+logic dec_is_jal;
 logic [6:0] dec_opcode;
 
 assign offset_eff = offset[`DATA_ADDR_SIZE-1:0];
@@ -85,6 +88,7 @@ assign rf_raddr_b = rs2;
 assign writes_rd = hzd_nop_d ? 0 : dec_writes_rd;
 assign is_store  = hzd_nop_d ? 0 : dec_is_store;
 assign is_load   = hzd_nop_d ? 0 : dec_is_load;
+assign is_jal    = hzd_nop_d ? 0 : dec_is_jal;
 assign opcode    = hzd_nop_d ? 0 : dec_opcode;
 
 decoder decoder (
@@ -96,6 +100,7 @@ decoder decoder (
 	.writes_rd      (dec_writes_rd),
 	.is_store       (dec_is_store),
 	.is_load        (dec_is_load),
+    .is_jal         (dec_is_jal),
 	.aluin_b_is_imm (aluin_b_is_imm),
 	.imm            (imm),
 	.offset         (offset),
@@ -145,6 +150,7 @@ always_ff @(posedge clk or posedge rst) begin
         d_writes_rd             <=0;
         d_is_store              <=0;
         d_is_load               <=0;
+        d_is_jal                <=0;
         d_fwd_aluout_rs1        <=0;
         d_fwd_aluout_rs2        <=0;
         d_fwd_rfwdata_rs1       <=0;
@@ -162,6 +168,7 @@ always_ff @(posedge clk or posedge rst) begin
         d_writes_rd             <=writes_rd;
         d_is_store              <=is_store;
         d_is_load               <=is_load;
+        d_is_jal                <=is_jal;
         d_fwd_aluout_rs1        <=fwd_aluout_rs1;
         d_fwd_aluout_rs2        <=fwd_aluout_rs2;
         d_fwd_rfwdata_rs1       <=fwd_rfwdata_rs1;

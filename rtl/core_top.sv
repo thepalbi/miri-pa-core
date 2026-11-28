@@ -54,6 +54,7 @@ module core_top (
     logic d_writes_rd;
     logic d_is_store;
     logic d_is_load;
+    logic d_is_jal;
     logic d_fwd_aluout_rs1;
     logic d_fwd_aluout_rs2;
     logic d_fwd_rfwdata_rs1;
@@ -74,6 +75,7 @@ module core_top (
     logic [4:0] a_rf_waddr_d;
     logic a_btaken;
     logic [`DATA_ADDR_SIZE-1:0] a_pc_tgt;
+    logic a_is_jal;
 
     // M-stage signals
     logic [`DATA_WORD_SIZE-1:0] m_dmem_rdata;
@@ -174,6 +176,7 @@ module core_top (
         .d_writes_rd(d_writes_rd),
         .d_is_store(d_is_store),
         .d_is_load(d_is_load),
+        .d_is_jal(d_is_jal),
         .d_fwd_aluout_rs1(d_fwd_aluout_rs1),
         .d_fwd_aluout_rs2(d_fwd_aluout_rs2),
         .d_fwd_rfwdata_rs1(d_fwd_rfwdata_rs1),
@@ -186,6 +189,7 @@ module core_top (
         .d_is_load    (d_is_load),
         .d_rf_waddr_d (d_rf_waddr_d),
         .a_btaken     (a_btaken),
+        .a_is_jal     (a_is_jal),
         .hzd_stall_f  (hzd_stall_f),
         .hzd_nop_d    (hzd_nop_d),
         .hzd_nop_f    (hzd_nop_f),
@@ -205,6 +209,7 @@ module core_top (
         .d_funct7(d_funct7),
         .d_is_store(d_is_store),
         .d_is_load(d_is_load),
+        .d_is_jal(d_is_jal),
         .d_writes_rd(d_writes_rd),
         .d_rf_waddr_d(d_rf_waddr_d),
         .d_fwd_aluout_rs1(d_fwd_aluout_rs1),
@@ -222,7 +227,8 @@ module core_top (
         .a_rf_waddr_d(a_rf_waddr_d),
 
         .a_btaken(a_btaken),
-        .a_pc_tgt(a_pc_tgt)
+        .a_pc_tgt(a_pc_tgt),
+        .a_is_jal(a_is_jal)
     );
 
     m_stage m_stage (

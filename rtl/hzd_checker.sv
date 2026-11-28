@@ -8,9 +8,12 @@ module hzd_checker(
 
     input logic d_is_load,
     input logic [4:0] d_rf_waddr_d,
+    input logic a_btaken,
 
     output logic hzd_stall_f,
-    output logic hzd_nop_d
+    output logic hzd_nop_d,
+    output logic hzd_nop_f,
+    output logic hzd_redirect_pc
     );
 
     logic hzd_load_use;
@@ -20,7 +23,10 @@ module hzd_checker(
                          & (d_rf_waddr_d != 0)
                          & (rf_r_rs1 == d_rf_waddr_d | rf_r_rs2 == d_rf_waddr_d);
 
-    assign hzd_stall_f = hzd_load_use;
-    assign hzd_nop_d   = hzd_load_use;
+    // Output hazard signals
+    assign hzd_stall_f     = hzd_load_use;
+    assign hzd_nop_d       = hzd_load_use | a_btaken;
+    assign hzd_nop_f       = a_btaken;
+    assign hzd_redirect_pc = a_btaken;
 
 endmodule

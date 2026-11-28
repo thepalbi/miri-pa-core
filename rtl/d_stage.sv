@@ -7,10 +7,9 @@ module d_stage(
     input logic rst,
     input logic run,
 
-    input logic branch_taken,
     input logic hzd_nop_d,
 
-    input logic [`DATA_ADDR_SIZE-1:0] f_pc,
+    input logic [`DATA_ADDR_SIZE-1:0] f_ir_pc,
     input logic [`DATA_WORD_SIZE-1:0] f_ir,
 
     // register file iface
@@ -31,8 +30,7 @@ module d_stage(
     output reg [`DATA_WORD_SIZE-1:0] d_rs2_data,
     output reg d_aluin_b_is_imm,
     output reg [`DATA_WORD_SIZE-1:0] d_imm,
-    output reg d_pc_wen,
-    output reg [`DATA_ADDR_SIZE-1:0] d_branch_target,
+    output reg [`DATA_ADDR_SIZE-1:0] d_pc_tgt,
 
     output reg [6:0] d_opcode,
     output reg [2:0] d_funct3,
@@ -58,8 +56,7 @@ logic [4:0] rs2;
 logic [4:0] rf_waddr_d;
 logic [`DATA_WORD_SIZE-1:0] rs1_data;
 logic [`DATA_WORD_SIZE-1:0] rs2_data;
-logic pc_wen;
-logic [`DATA_ADDR_SIZE-1:0] branch_target;
+logic [`DATA_ADDR_SIZE-1:0] pc_tgt;
 logic [6:0] opcode;
 logic [2:0] funct3;
 logic [6:0] funct7;
@@ -107,14 +104,10 @@ decoder decoder (
 	.funct7         (funct7)
 );
 
-branch_tgt_gen branch_tgt_gen (
-	.run         (run),
-	.pc          (f_pc),
-	.opcode      (opcode),
-	.branch_taken(branch_taken),
-	.offset      (offset_eff),
-	.pc_wen      (pc_wen),
-	.branch_tgt  (branch_target)
+pc_tgt_gen pc_tgt_gen (
+	.pc     (f_ir_pc),
+	.offset (offset_eff),
+	.pc_tgt (pc_tgt)
 );
 
 fwd_checker fwd_checker (
@@ -145,8 +138,7 @@ always_ff @(posedge clk or posedge rst) begin
         d_rs2_data              <=0;
         d_aluin_b_is_imm        <=0;
         d_imm                   <=0;
-        d_pc_wen                <=0;
-        d_branch_target         <=0;
+        d_pc_tgt                <=0;
         d_opcode                <=0;
         d_funct3                <=0;
         d_funct7                <=0;
@@ -163,8 +155,7 @@ always_ff @(posedge clk or posedge rst) begin
         d_rs2_data              <=rs2_data;
         d_aluin_b_is_imm        <=aluin_b_is_imm;
         d_imm                   <=imm;
-        d_pc_wen                <=pc_wen;
-        d_branch_target         <=branch_target;
+        d_pc_tgt                <=pc_tgt;
         d_opcode                <=opcode;
         d_funct3                <=funct3;
         d_funct7                <=funct7;

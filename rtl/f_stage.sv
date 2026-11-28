@@ -7,6 +7,7 @@ module f_stage(
     input logic rst,
     input logic run,
     input logic stall,
+    input logic nop,
 
     // PC write signals
     input logic wen_pc,
@@ -17,7 +18,8 @@ module f_stage(
 
     // Stage interface
     output [`DATA_ADDR_SIZE-1:0] f_pc,
-    output reg [`DATA_WORD_SIZE-1:0] f_ir
+    output reg [`DATA_WORD_SIZE-1:0] f_ir,
+    output reg [`DATA_ADDR_SIZE-1:0] f_ir_pc
 );
 
 pc pc_mod(
@@ -32,9 +34,17 @@ pc pc_mod(
 
 always_ff @(posedge clk or posedge rst) begin
     if (rst) begin
-        f_ir <= 0;
-    end else if (run && !stall) begin
-        f_ir <= imem_rdata;
+        f_ir    <= 0;
+        f_ir_pc <= 0;
+    end else if (!run | stall) begin
+        f_ir    <= f_ir;
+        f_ir_pc <= f_ir_pc;
+    end else if (nop) begin
+        f_ir    <= `INSTR_NOP;
+        f_ir_pc <= 0;
+    end else begin
+        f_ir    <= imem_rdata;
+        f_ir_pc <= f_pc;
     end
 end
 

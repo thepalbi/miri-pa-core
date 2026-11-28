@@ -49,7 +49,7 @@ async def test_beq_taken(dut):
 
     # Let core run (PC starts on IMEM '0)
     dut.run.value = 1
-    await ClockCycles(dut.clk, 10)
+    await ClockCycles(dut.clk, 20)
 
     assert dut.rf.regs[1].value == 5
     assert dut.rf.regs[2].value == 5

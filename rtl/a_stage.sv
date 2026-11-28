@@ -22,14 +22,18 @@ module a_stage(
     input logic d_fwd_rfwdata_rs1,
     input logic d_fwd_rfwdata_rs2,
     input logic [`DATA_WORD_SIZE-1:0] rf_wdata,
+    input logic [`DATA_ADDR_SIZE-1:0] d_pc_tgt,
 
     output reg [`DATA_WORD_SIZE-1:0] a_aluout,
     output reg [`DATA_WORD_SIZE-1:0] a_rs2_data,
-    output reg a_btaken,
     output reg a_is_store,
     output reg a_is_load,
     output reg a_writes_rd,
-    output reg [4:0] a_rf_waddr_d
+    output reg [4:0] a_rf_waddr_d,
+
+    // branch result
+    output logic a_btaken,
+    output logic [`DATA_ADDR_SIZE-1:0] a_pc_tgt
 );
     logic [`DATA_WORD_SIZE-1:0] aluout;
     logic [`DATA_WORD_SIZE-1:0] aluin_a;
@@ -59,6 +63,8 @@ module a_stage(
     assign is_load = d_is_load;
     assign writes_rd = d_writes_rd;
     assign rf_waddr_d = d_rf_waddr_d;
+    assign a_btaken = btaken;
+    assign a_pc_tgt = d_pc_tgt;
 
     alu alu(
         .input1(aluin_a),
@@ -74,7 +80,6 @@ module a_stage(
         if (rst) begin
             a_aluout        <=0;
             a_rs2_data      <=0;
-            a_btaken        <=0;
             a_is_store      <=0;
             a_is_load       <=0;
             a_writes_rd     <=0;
@@ -82,7 +87,6 @@ module a_stage(
         end else begin
             a_aluout        <=aluout;
             a_rs2_data      <=rs2_data;
-            a_btaken        <=btaken;
             a_is_store      <=is_store;
             a_is_load       <=is_load;
             a_writes_rd     <=writes_rd;

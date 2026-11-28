@@ -23,3 +23,6 @@
 `define F7_BASE   7'b0000000
 `define F7_SUB    7'b0100000
 `define F7_MULDIV 7'b0000001
+
+// Instructions encoding
+`define INSTR_NOP 32'h00000013  // addi x0, x0, 0
